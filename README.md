@@ -12,14 +12,18 @@ Comunidade acadêmica do campus (estudantes, e potencialmente professores e serv
 
 ## Grupo
 
-- [Felipe dos Santos] — [https://github.com/felipesantos100504]
-- [Nome] — [GitHub]
+- Felipe dos Santos — https://github.com/felipesantos100504
+- Luiz Eduardo Jelonschek — https://github.com/SonyBlackk
 - [Nome] — [GitHub]
 - [Nome] — [GitHub]
 
 ## Stack
 
 React Native + Expo SDK 54, Firebase Auth + Firestore, LLM: Gemini via Google AI Studio.
+
+## Protótipo
+
+🔗 [Protótipo navegável no Google Stitch](https://stitch.withgoogle.com/projects/16668250046840718500)
 
 ## Documentos
 
