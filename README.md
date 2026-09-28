@@ -14,8 +14,8 @@ Comunidade acadêmica do campus (estudantes, e potencialmente professores e serv
 
 - Felipe dos Santos — https://github.com/felipesantos100504
 - Luiz Eduardo Jelonschek — https://github.com/SonyBlackk
-- [Nome] — [GitHub]
-- [Nome] — [GitHub]
+- João Pedro Gehlen — https://github.com/joaopedrogehlen25
+- Marx Mazzochin Pires de Carvalho — https://github.com/Marx-Carvalho
 
 ## Stack
 
