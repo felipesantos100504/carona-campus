@@ -16,10 +16,10 @@ export default function Publicar() {
       <Placeholder
         responsavel="Integrante B"
         itens={[
-          'Alternar "Oferecer" / "Pedir" carona',
           'Caixa de texto livre ("saio de Pato Branco sexta 18h, 3 vagas, R$ 90")',
           'Botão "Interpretar" → extrairViagem() com estado de carregando',
           'Cartão de confirmação com campos editáveis (origem, destino, paradas, data, hora, vagas, valor)',
+          'Viagem recorrente: dias da semana (diasSemana → recorrencia)',
           'Se a IA falhar: mostrar erro e liberar os campos para preenchimento manual (RF-16)',
           'Publicar → publicarCarona() e navegar para Viagens',
         ]}

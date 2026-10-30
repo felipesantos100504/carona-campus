@@ -2,7 +2,7 @@
 
 ## Análise comparativa de modelagem de dados no Firestore
 
-Entidade central: **caronas** e a gestão de suas **vagas/solicitações**, considerando ~400 usuários, ~40 caronas/dia, ~1.200 registros no histórico, as 3 consultas principais do app (busca por compatibilidade, histórico por usuário, verificação de status) e a regra de segurança de e-mail institucional (aplicada no nível do Firebase Authentication, igual nas três alternativas — a diferença entre elas está em quão simples fica escrever as *regras de leitura/escrita* sobre os dados).
+Entidade central: **caronas** e a gestão de suas **vagas/solicitações**, considerando ~400 usuários, ~40 caronas/dia, ~1.200 registros no histórico, as 3 consultas principais do app (busca por compatibilidade, histórico por usuário, verificação de status) e a regra de segurança de e-mail verificado (aplicada no nível do Firebase Authentication, igual nas três alternativas — a diferença entre elas está em quão simples fica escrever as *regras de leitura/escrita* sobre os dados).
 
 ### Alternativa A — Coleção única de caronas com array de vagas/solicitações
 

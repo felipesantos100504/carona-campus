@@ -39,8 +39,8 @@ export default function Resultados() {
       return (
         <EstadoVazio
           titulo="Nenhuma carona encontrada"
-          mensagem="Tente outra data ou publique um pedido para motoristas que fazem esse trajeto."
-          acao={{ titulo: 'Publicar pedido de carona', onPress: () => router.navigate('/publicar') }}
+          mensagem="Nenhuma viagem passa por essas cidades na data escolhida. Tente outra data."
+          acao={{ titulo: 'Alterar busca', onPress: () => router.back() }}
         />
       );
     }

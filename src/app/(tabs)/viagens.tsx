@@ -20,6 +20,7 @@ const ROTULO_STATUS = {
 
 // TODO(Integrante D): abas "Como passageiro" / "Como motorista"
 // (listarMinhasCaronas), visual do status e agrupamento por data.
+// Após a viagem, motorista e passageiro se avaliam (RF-10).
 export default function Viagens() {
   const lista = useCarregamento(listarMinhasReservas);
 

@@ -1,5 +1,5 @@
 ---
-name: Predictive Campus Mobility
+name: Predictive Intercity Mobility
 colors:
   surface: '#faf8ff'
   surface-dim: '#d2d9f4'
@@ -131,10 +131,10 @@ spacing:
 
 ## Brand & Style
 
-This design system drives a modern academic ridesharing platform that connects university students and faculty through predictive route optimization. The visual language balances institutional trustworthiness with forward-looking intelligence.
+This design system drives a modern intercity ridesharing platform that connects drivers and passengers traveling between cities, with AI-assisted trip publishing. The visual language balances trustworthiness with forward-looking intelligence.
 
 - **Personality:** Analytical, dependable, welcoming, and technologically refined.
-- **Target Audience:** University students, researchers, and campus faculty requiring secure, effortless, and sustainable daily commutes.
+- **Target Audience:** People who travel regularly between cities (students, workers, weekend travelers) and drivers who already make those trips and want to share the cost.
 - **Emotional Response:** Confidence in safety and verification, collective environmental responsibility, and effortless speed powered by predictive intelligence.
 - **Design Movement:** Modern Clean Functionalism with Ambient Intelligence accents. Generous whitespaces, crisp structural boundaries, and subtle atmospheric indigo glows communicate predictive algorithmic matching without visual noise.
 
@@ -143,7 +143,7 @@ This design system drives a modern academic ridesharing platform that connects u
 The palette organizes functional hierarchy, institutional trust, and computational intelligence:
 
 - **Primary (`#6366F1` - Predictive Indigo):** Designates machine learning actions, ride route optimizations, predictive matching scores, and proactive suggestions.
-- **Secondary (`#1E3A8A` - Institutional Blue):** Grounds the interface in safety, institutional affiliation, verified profiles, and core navigation chrome.
+- **Secondary (`#1E3A8A` - Trust Blue):** Grounds the interface in safety, verified profiles, and core navigation chrome.
 - **Tertiary (`#059669` - Eco Emerald):** Highlights carbon offset metrics, confirmed carpools, punctual departure statuses, and success feedback.
 - **Neutral Palette:**
   - Base Background: `#F8FAFC`
@@ -152,13 +152,13 @@ The palette organizes functional hierarchy, institutional trust, and computation
   - Secondary Text / Icons: `#64748B`
   - High-Contrast Text / Dominant Titles: `#0F172A`
 
-Light mode serves as the primary canvas to ensure clarity under direct daylight across campus transit areas. Darker contrast layers are reserved for tactile, bottom-oriented interactive components.
+Light mode serves as the primary canvas to ensure clarity under direct daylight at pickup points and bus stations. Darker contrast layers are reserved for tactile, bottom-oriented interactive components.
 
 ## Typography
 
 Typography prioritizes scanability on handheld devices on the move:
 
-- **Headlines (`Outfit`):** Geometric, precise, and contemporary. Its open apertures reinforce clarity across route headlines, campus hubs, and departure clocks.
+- **Headlines (`Outfit`):** Geometric, precise, and contemporary. Its open apertures reinforce clarity across route headlines, city names, and departure clocks.
 - **Body & Labels (`Hanken Grotesk`):** Clean and structurally robust. The minimum default running size is set to `16px` (`body-md`) to ensure effortless legibility under varying lighting conditions.
 - **Rules:**
   - Critical numerical values (arrival times, fare shares, seat counts) use medium-to-bold weights with tabular figures where applicable.
@@ -203,7 +203,7 @@ The interface balances welcoming curves with structural integrity:
 
 - **Ride Cards:**
   - Background `#FFFFFF`, rounded 16px (`rounded-lg`), padded with `space-md` (16px).
-  - Features driver verification icon (Academic Blue), pickup ETA, remaining seats visualizer, and route corridor visualizer.
+  - Features driver verification icon (Trust Blue), departure time, informative price per seat, remaining seats visualizer, recurring-trip badge, and route corridor visualizer with intermediate stops.
 
 - **Input Fields:**
   - Height 52px minimum. Background `#F8FAFC`, border `1px solid #E2E8F0`, transitioning to `2px solid #6366F1` on focus. Placeholder text in `#64748B`.
@@ -212,4 +212,4 @@ The interface balances welcoming curves with structural integrity:
   - Route stepping nodes connected by vertical 2px continuous dashed lines (`#CBD5E1`). Active dropoff hubs highlighted in emerald (`#059669`).
 
 - **Verification & Safety Badges:**
-  - Academic credentials verified through an institutional pill badge combining a university shield icon, uppercase department or campus tag, and `#1E3A8A` tint.
+  - Verified e-mail shown through a pill badge combining a shield check icon, an uppercase "E-MAIL VERIFICADO" tag, and `#1E3A8A` tint.

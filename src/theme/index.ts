@@ -1,4 +1,4 @@
-// Tokens do design system "Predictive Campus Mobility" (docs/DESIGN.md).
+// Tokens do design system "Predictive Intercity Mobility" (docs/DESIGN.md).
 // Use sempre estes valores nas telas em vez de cores e tamanhos soltos.
 
 export const cores = {

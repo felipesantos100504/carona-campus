@@ -1,14 +1,24 @@
 # Carona Campus
 
-Aplicativo de mobilidade que conecta motoristas e passageiros da comunidade acadêmica, permitindo oferecer e buscar caronas descrevendo a viagem em linguagem natural.
+> **Nome provisório:** como o app passou a ser de caronas entre cidades, o grupo ainda vai escolher um novo nome.
+
+Aplicativo de caronas entre cidades, no estilo BlaBlaCar, em que o motorista publica a viagem descrevendo-a em texto livre e a IA organiza as informações.
 
 ## Problema
 
-Estudantes que se deslocam entre a cidade e o campus, ou para cidades vizinhas em finais de semana, organizam caronas por grupos de mensagens. As ofertas e pedidos se perdem em poucos minutos no fluxo de mensagens, não há como buscar uma carona específica depois, e não existe registro de quem viajou com quem.
+Quem viaja com frequência entre cidades combina caronas em grupos de mensagens. As ofertas se perdem em poucos minutos no fluxo de mensagens, não há como buscar uma carona específica depois, e não existe registro de quem viajou com quem. Os apps de carona existentes exigem formulários longos para publicar, obrigam a republicar a mesma viagem toda semana e só mostram viagens com exatamente a origem e o destino buscados.
 
 ## Público
 
-Comunidade acadêmica do campus (estudantes, e potencialmente professores e servidores) que precisam se deslocar regularmente entre a cidade e o campus ou em viagens de fim de semana, e hoje dependem de grupos de mensagens informais para combinar caronas.
+Pessoas que fazem viagens intermunicipais com regularidade (estudantes, trabalhadores, quem visita a família nos fins de semana) e motoristas que já fazem esses trajetos. O app não é limitado a uma instituição de ensino.
+
+## Diferenciais
+
+1. **Publicação com IA:** o motorista descreve a viagem como se mandasse uma mensagem no WhatsApp e a IA organiza origem, destino, paradas, horário, vagas e valor. Se a IA falhar, os campos podem ser preenchidos manualmente.
+2. **Viagens recorrentes:** o motorista cadastra uma viagem semanal uma única vez, sem republicar toda semana.
+3. **Paradas intermediárias:** a busca também encontra viagens que passam pela cidade do passageiro, mesmo com outra origem ou destino.
+
+A busca e a compatibilidade entre viagens são feitas por regras programadas, não pela IA. O valor por vaga é apenas informativo: o pagamento é combinado diretamente entre motorista e passageiro. Fora do escopo inicial: pagamentos pelo app, chat interno e rastreamento em tempo real.
 
 ## Grupo
 
@@ -69,6 +79,8 @@ As telas acessam dados só por `src/data/repositorio.ts`. Na próxima etapa, tro
 ## Protótipo
 
 🔗 [Protótipo navegável no Google Stitch](https://stitch.withgoogle.com/projects/16668250046840718500)
+
+As telas e fluxos da proposta atual estão descritos em [docs/prototipo.md](docs/prototipo.md).
 
 ## Documentos
 
