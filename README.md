@@ -58,6 +58,7 @@ Antes de subir alterações, rode `npm run lint` e `npm run typecheck`.
 - Persistência **local** com AsyncStorage. Ainda não há Firebase nem autenticação real: o login só grava uma sessão no aparelho.
 - A extração da IA é **simulada** (`src/data/ia.ts`). Ela tem a mesma assinatura que a integração com o Gemini terá na próxima etapa.
 - As listas tratam os estados de carregando, vazio e erro.
+- A aba **Viagens** separa as reservas como passageiro das caronas publicadas como motorista, e o **Perfil** permite editar nome, cidade e bio. A troca de foto entra na etapa 3, junto com o recurso nativo.
 - Regras de negócio simplificadas nesta etapa: a solicitação de vaga já sai confirmada (a confirmação pelo motorista, RF-08, entra com o Firestore), a avaliação ainda não recalcula a média do motorista e a busca considera só a próxima saída das viagens recorrentes.
 
 ## Estrutura do código
@@ -68,7 +69,7 @@ src/
     (auth)/       login e cadastro
     (tabs)/       abas: Buscar, Publicar, Viagens, Perfil
     resultados.tsx, carona/[id].tsx, avaliar/[reservaId].tsx
-  components/     componentes reutilizáveis (Botao, Campo, CardCarona, estados...)
+  components/     componentes reutilizáveis (Botao, Campo, CardCarona, Chip, estados...)
   data/           tipos, dados de exemplo, repositório (AsyncStorage) e IA simulada
   hooks/          useCarregamento: carregando / erro / pronto para as listas
   theme/          cores, fontes e espaçamentos do design system (docs/DESIGN.md)

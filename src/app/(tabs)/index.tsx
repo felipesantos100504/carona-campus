@@ -10,16 +10,17 @@ import { Tela } from '@/components/tela';
 import { cores, espaco, tipografia } from '@/theme';
 import { hojeISO } from '@/utils/formato';
 
-const OPCOES_DATA = [
-  { rotulo: 'Qualquer dia', valor: '' },
-  { rotulo: 'Hoje', valor: hojeISO(0) },
-  { rotulo: 'Amanhã', valor: hojeISO(1) },
-];
-
 export default function Buscar() {
   const [origem, setOrigem] = useState('');
   const [destino, setDestino] = useState('');
   const [data, setData] = useState('');
+
+  // Calculado a cada renderização para não ficar com a data errada após a meia-noite.
+  const opcoesData = [
+    { rotulo: 'Qualquer dia', valor: '' },
+    { rotulo: 'Hoje', valor: hojeISO(0) },
+    { rotulo: 'Amanhã', valor: hojeISO(1) },
+  ];
 
   function inverter() {
     setOrigem(destino);
@@ -54,7 +55,7 @@ export default function Buscar() {
 
       <Text style={styles.rotulo}>Quando</Text>
       <View style={styles.linha}>
-        {OPCOES_DATA.map((o) => (
+        {opcoesData.map((o) => (
           <Chip key={o.rotulo} rotulo={o.rotulo} selecionado={data === o.valor} onPress={() => setData(o.valor)} />
         ))}
       </View>

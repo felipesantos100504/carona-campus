@@ -1,13 +1,14 @@
 import { router } from 'expo-router';
+import { ReactElement, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Botao } from '@/components/botao';
 import { CardCarona } from '@/components/card-carona';
+import { Chip } from '@/components/chip';
 import { EstadoCarregando, EstadoErro, EstadoVazio } from '@/components/estados';
-import { Placeholder } from '@/components/placeholder';
-import { listarMinhasReservas } from '@/data/repositorio';
-import { ReservaDetalhada } from '@/data/tipos';
+import { listarMinhasCaronas, listarMinhasReservas } from '@/data/repositorio';
+import { Carona, ReservaDetalhada } from '@/data/tipos';
 import { useCarregamento } from '@/hooks/use-carregamento';
 import { cores, espaco, tipografia } from '@/theme';
 
@@ -18,28 +19,23 @@ const ROTULO_STATUS = {
   concluida: 'Viagem realizada',
 };
 
-// TODO(Integrante D): abas "Como passageiro" / "Como motorista"
-// (listarMinhasCaronas), visual do status e agrupamento por data.
-// Após a viagem, motorista e passageiro se avaliam (RF-10).
-export default function Viagens() {
-  const lista = useCarregamento(listarMinhasReservas);
+type Aba = 'passageiro' | 'motorista';
 
-  function vazioOuEstado() {
+// Reservas como passageiro e caronas publicadas como motorista (RF-09).
+export default function Viagens() {
+  const [aba, setAba] = useState<Aba>('passageiro');
+  const reservas = useCarregamento(listarMinhasReservas);
+  const caronas = useCarregamento(listarMinhasCaronas);
+
+  function estadoDaLista(lista: typeof reservas | typeof caronas, vazio: ReactElement) {
     if (lista.status === 'carregando') return <EstadoCarregando />;
     if (lista.status === 'erro') {
       return <EstadoErro mensagem={lista.erro.message} onTentarNovamente={lista.recarregar} />;
     }
-    return (
-      <EstadoVazio
-        titulo="Nenhuma viagem ainda"
-        mensagem="Quando você reservar uma vaga, ela aparece aqui."
-        icone="car-outline"
-        acao={{ titulo: 'Buscar caronas', onPress: () => router.navigate('/(tabs)') }}
-      />
-    );
+    return vazio;
   }
 
-  function renderizar({ item }: { item: ReservaDetalhada }) {
+  function renderizarReserva({ item }: { item: ReservaDetalhada }) {
     const { reserva, carona, motorista } = item;
     const podeAvaliar = reserva.status === 'concluida' && !reserva.avaliacao;
     return (
@@ -64,21 +60,72 @@ export default function Viagens() {
     );
   }
 
+  function renderizarCarona({ item }: { item: Carona }) {
+    const reservadas = item.vagasTotais - item.vagasDisponiveis;
+    const passada = new Date(item.dataHora).getTime() < Date.now();
+    return (
+      <View style={styles.item}>
+        <Text style={styles.status}>
+          {passada ? 'Viagem realizada · ' : ''}
+          {reservadas} de {item.vagasTotais} {item.vagasTotais === 1 ? 'vaga reservada' : 'vagas reservadas'}
+        </Text>
+        <CardCarona
+          carona={item}
+          onPress={() => router.push({ pathname: '/carona/[id]', params: { id: item.id } })}
+        />
+      </View>
+    );
+  }
+
+  const cabecalho = (
+    <View style={styles.cabecalho}>
+      <Text style={styles.titulo}>Minhas viagens</Text>
+      <View style={styles.abas}>
+        <Chip rotulo="Como passageiro" selecionado={aba === 'passageiro'} onPress={() => setAba('passageiro')} />
+        <Chip rotulo="Como motorista" selecionado={aba === 'motorista'} onPress={() => setAba('motorista')} />
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.raiz} edges={['top']}>
-      <FlatList
-        data={lista.status === 'pronto' ? lista.dados : []}
-        keyExtractor={(item) => item.reserva.id}
-        contentContainerStyle={styles.lista}
-        ListHeaderComponent={
-          <View style={styles.cabecalho}>
-            <Text style={styles.titulo}>Minhas viagens</Text>
-            <Placeholder responsavel="Integrante D" itens={['Separar passageiro / motorista', 'Refinar visual do status']} />
-          </View>
-        }
-        ListEmptyComponent={vazioOuEstado()}
-        renderItem={renderizar}
-      />
+      {aba === 'passageiro' ? (
+        <FlatList
+          key="passageiro"
+          data={reservas.status === 'pronto' ? reservas.dados : []}
+          keyExtractor={(item) => item.reserva.id}
+          contentContainerStyle={styles.lista}
+          ListHeaderComponent={cabecalho}
+          ListEmptyComponent={estadoDaLista(
+            reservas,
+            <EstadoVazio
+              titulo="Nenhuma reserva ainda"
+              mensagem="Quando você reservar uma vaga, ela aparece aqui."
+              icone="car-outline"
+              acao={{ titulo: 'Buscar caronas', onPress: () => router.navigate('/(tabs)') }}
+            />,
+          )}
+          renderItem={renderizarReserva}
+        />
+      ) : (
+        <FlatList
+          key="motorista"
+          data={caronas.status === 'pronto' ? caronas.dados : []}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.lista}
+          ListHeaderComponent={cabecalho}
+          ListEmptyComponent={estadoDaLista(
+            caronas,
+            <EstadoVazio
+              titulo="Nenhuma carona publicada"
+              mensagem="As viagens que você oferecer como motorista aparecem aqui."
+              icone="car-outline"
+              acao={{ titulo: 'Publicar carona', onPress: () => router.navigate('/(tabs)/publicar') }}
+            />,
+          )}
+          renderItem={renderizarCarona}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -88,6 +135,7 @@ const styles = StyleSheet.create({
   lista: { padding: espaco.md, gap: espaco.lg, flexGrow: 1 },
   cabecalho: { gap: espaco.md, paddingTop: espaco.lg },
   titulo: { ...tipografia.tituloG, color: cores.texto },
+  abas: { flexDirection: 'row', gap: espaco.sm },
   item: { gap: espaco.sm },
   status: { ...tipografia.rotuloP, color: cores.textoSecundario },
 });
