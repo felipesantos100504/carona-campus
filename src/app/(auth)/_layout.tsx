@@ -3,5 +3,8 @@ import { Stack } from 'expo-router';
 import { cores } from '@/theme';
 
 export default function AuthLayout() {
-  return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: cores.fundo } }} />;
+  // Login e cadastro alternam pelo seletor do topo, então trocam com fade em vez de deslizar.
+  return (
+    <Stack screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: cores.fundo } }} />
+  );
 }

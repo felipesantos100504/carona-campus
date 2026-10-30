@@ -50,31 +50,31 @@ colors:
   surface-variant: '#dae2fd'
 typography:
   display-lg:
-    fontFamily: Outfit
+    fontFamily: Space Grotesk
     fontSize: 36px
     fontWeight: '700'
     lineHeight: 44px
     letterSpacing: -0.02em
   display-lg-mobile:
-    fontFamily: Outfit
+    fontFamily: Space Grotesk
     fontSize: 30px
     fontWeight: '700'
     lineHeight: 38px
     letterSpacing: -0.015em
   headline-lg:
-    fontFamily: Outfit
+    fontFamily: Space Grotesk
     fontSize: 26px
     fontWeight: '600'
     lineHeight: 34px
     letterSpacing: -0.01em
   headline-md:
-    fontFamily: Outfit
+    fontFamily: Space Grotesk
     fontSize: 22px
     fontWeight: '600'
     lineHeight: 30px
     letterSpacing: -0.01em
   headline-sm:
-    fontFamily: Outfit
+    fontFamily: Space Grotesk
     fontSize: 18px
     fontWeight: '600'
     lineHeight: 26px
@@ -144,11 +144,12 @@ The palette organizes functional hierarchy, institutional trust, and computation
 
 - **Primary (`#6366F1` - Predictive Indigo):** Designates machine learning actions, ride route optimizations, predictive matching scores, and proactive suggestions.
 - **Secondary (`#1E3A8A` - Trust Blue):** Grounds the interface in safety, verified profiles, and core navigation chrome.
-- **Tertiary (`#059669` - Eco Emerald):** Highlights carbon offset metrics, confirmed carpools, punctual departure statuses, and success feedback.
+- **Tertiary (`#059669` - Eco Emerald, filled `#047857`):** Highlights confirmed carpools, punctual departure statuses, success feedback, prices per seat, selected chips and the active tab. Confirming buttons (Ver detalhes, Publicar carona, Enviar avaliação) use the filled emerald.
 - **Neutral Palette:**
-  - Base Background: `#F8FAFC`
+  - Base Background: `#F5F6FE` (light lavender, as in the Stitch prototype)
   - Elevated Container: `#FFFFFF`
-  - Subtle Dividing Borders: `#E2E8F0`
+  - Inner Panels, Inputs and Chips: `#F0F1FD` / `#EEF0FF`
+  - Subtle Dividing Borders: `#E4E7F5`
   - Secondary Text / Icons: `#64748B`
   - High-Contrast Text / Dominant Titles: `#0F172A`
 
@@ -158,7 +159,7 @@ Light mode serves as the primary canvas to ensure clarity under direct daylight 
 
 Typography prioritizes scanability on handheld devices on the move:
 
-- **Headlines (`Outfit`):** Geometric, precise, and contemporary. Its open apertures reinforce clarity across route headlines, city names, and departure clocks.
+- **Headlines (`Space Grotesk`):** Geometric, precise, and contemporary. Its open apertures reinforce clarity across route headlines, city names, departure clocks and prices.
 - **Body & Labels (`Hanken Grotesk`):** Clean and structurally robust. The minimum default running size is set to `16px` (`body-md`) to ensure effortless legibility under varying lighting conditions.
 - **Rules:**
   - Critical numerical values (arrival times, fare shares, seat counts) use medium-to-bold weights with tabular figures where applicable.
@@ -193,9 +194,10 @@ The interface balances welcoming curves with structural integrity:
 ## Components
 
 - **Buttons:**
-  - *Primary (Action):* Height 52px (`h-13`) to 56px (`h-14`), full width or lower-pinned. Indigo base (`#6366F1`) or Deep Blue (`#1E3A8A`) with white text, font `label-lg`, and rounded corners (16px).
-  - *Predictive AI Action:* Graded accent button with indigo-to-purple subtle gradient, marked by a spark icon and 52px height.
-  - *Secondary / Outline:* Translucent surface with a 1px border (`#E2E8F0`), active state shifting to `#F1F5F9`.
+  - *Primary (Action):* Height 52px (`h-13`) to 56px (`h-14`), full width or lower-pinned, pill-shaped (`rounded-full`). Indigo base (`#6366F1`) with white text and font `label-lg` for the main and AI actions (Entrar, Buscar caronas, Interpretar com IA, Solicitar vaga).
+  - *Confirm:* Same shape in filled emerald (`#047857`) for confirming and publishing.
+  - *Soft:* Lavender background (`#EEF0FF`) with indigo label, for secondary actions inside cards.
+  - *Outline / Danger:* White with a 1px border (`#E4E7F5`), or a soft red background for "Sair da conta" and "Cancelar minha vaga".
 
 - **Predictive Match & Status Chips:**
   - *AI Recommendation Chip:* Subtle indigo background (`rgba(99, 102, 241, 0.1)`), indigo label (`#6366F1`), adorned with micro-confidence score ("98% compatível").
@@ -206,7 +208,8 @@ The interface balances welcoming curves with structural integrity:
   - Features driver verification icon (Trust Blue), departure time, informative price per seat, remaining seats visualizer, recurring-trip badge, and route corridor visualizer with intermediate stops.
 
 - **Input Fields:**
-  - Height 52px minimum. Background `#F8FAFC`, border `1px solid #E2E8F0`, transitioning to `2px solid #6366F1` on focus. Placeholder text in `#64748B`.
+  - Height 52px minimum, rounded 12px. Lavender background (`#F0F1FD`) without a visible border, transitioning to white with `2px solid #6366F1` on focus. Label with a small icon above the field. Placeholder text in `#64748B`.
+  - City fields show a round icon on the left (emerald dot for origin, indigo pin for destination) and a clear button on the right.
 
 - **Lists & Timeline Steps:**
   - Route stepping nodes connected by vertical 2px continuous dashed lines (`#CBD5E1`). Active dropoff hubs highlighted in emerald (`#059669`).

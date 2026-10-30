@@ -1,16 +1,16 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Botao } from '@/components/botao';
 import { Campo } from '@/components/campo';
-import { Tela } from '@/components/tela';
+import { CampoCidade } from '@/components/campo-cidade';
+import { Entrada } from '@/components/entrada';
 import { salvarMeuPerfil, sessao } from '@/data/repositorio';
-import { cores, tipografia } from '@/theme';
 
-// TODO(Integrante A): escolher foto (expo-image-picker), validar campos,
-// botão de voltar para o login. O nome e a cidade já ficam salvos localmente.
+// TODO: escolher foto (expo-image-picker) e validar os campos na etapa 3,
+// junto com o Firebase Auth. O nome e a cidade já ficam salvos localmente.
 export default function Cadastro() {
   const [nome, setNome] = useState('');
   const [cidade, setCidade] = useState('');
@@ -25,29 +25,26 @@ export default function Cadastro() {
   }
 
   return (
-    <Tela
-      rodape={
-        <>
-          <Botao titulo="Criar conta" onPress={criarConta} carregando={salvando} />
-          <Botao titulo="Já tenho conta" variante="texto" onPress={() => router.back()} />
-        </>
-      }>
-      <Text style={styles.titulo}>Criar conta</Text>
-      <Avatar nome={nome || '?'} tamanho={88} />
-      <Campo rotulo="Nome completo" value={nome} onChangeText={setNome} placeholder="Seu nome" />
-      <Campo rotulo="Cidade" value={cidade} onChangeText={setCidade} placeholder="Onde você mora" />
+    <Entrada aba="cadastro">
+      <View style={styles.avatar}>
+        <Avatar nome={nome || '?'} tamanho={72} />
+      </View>
+      <Campo rotulo="Nome completo" icone="person-outline" value={nome} onChangeText={setNome} placeholder="Seu nome" />
+      <CampoCidade rotulo="Cidade" tipo="origem" valor={cidade} onChange={setCidade} placeholder="Onde você mora" />
       <Campo
         rotulo="E-mail"
+        icone="at"
         value={email}
         onChangeText={setEmail}
-        placeholder="voce@email.com"
+        placeholder="seu@email.com"
         keyboardType="email-address"
         autoCapitalize="none"
       />
-    </Tela>
+      <Botao titulo="Criar conta" icone="person-add-outline" onPress={criarConta} carregando={salvando} />
+    </Entrada>
   );
 }
 
 const styles = StyleSheet.create({
-  titulo: { ...tipografia.tituloG, color: cores.texto, paddingTop: 24 },
+  avatar: { alignItems: 'center' },
 });

@@ -1,12 +1,17 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
+import { Aviso } from '@/components/aviso';
 import { Botao } from '@/components/botao';
+import { Cabecalho } from '@/components/cabecalho';
 import { Campo } from '@/components/campo';
 import { CampoCidade } from '@/components/campo-cidade';
+import { Cartao } from '@/components/cartao';
 import { EstadoCarregando, EstadoErro } from '@/components/estados';
+import { Selo } from '@/components/selo';
 import { Tela } from '@/components/tela';
 import {
   definirSimularErro,
@@ -80,45 +85,70 @@ export default function Perfil() {
     }
   }
 
+  const usuario = perfil.status !== 'erro' ? perfil.dados : null;
+
   return (
     <Tela>
+      <Cabecalho titulo="Perfil" semPerfil />
+
       {perfil.status === 'carregando' && !perfil.dados ? <EstadoCarregando itens={1} /> : null}
       {perfil.status === 'erro' ? <EstadoErro mensagem={perfil.erro.message} onTentarNovamente={perfil.recarregar} /> : null}
-      {perfil.dados && perfil.status !== 'erro' && !editando ? (
-        <View style={styles.cabecalho}>
-          <Avatar nome={perfil.dados.nome} fotoUri={perfil.dados.fotoUri} tamanho={88} />
-          <Text style={styles.nome}>{perfil.dados.nome}</Text>
-          <Text style={styles.detalhe}>
-            {perfil.dados.cidade} · ★ {perfil.dados.avaliacaoMedia.toFixed(1)} · {perfil.dados.totalViagens} viagens
-          </Text>
-          {perfil.dados.bio ? <Text style={styles.bio}>{perfil.dados.bio}</Text> : null}
-          <Botao
-            titulo="Editar perfil"
-            icone="create-outline"
-            variante="contorno"
-            estilo={styles.botaoEditar}
-            onPress={() => perfil.dados && editar(perfil.dados)}
-          />
-        </View>
+
+      {usuario ? (
+        <Cartao>
+          <View style={styles.identidade}>
+            <Avatar nome={usuario.nome} fotoUri={usuario.fotoUri} tamanho={72} verificado />
+            <View style={styles.flex}>
+              <Text style={styles.nome}>{usuario.nome}</Text>
+              <Text style={styles.legenda}>
+                <Ionicons name="location-outline" size={13} color={cores.textoSecundario} /> {usuario.cidade}
+              </Text>
+              <Selo rotulo="E-mail verificado" icone="shield-checkmark-outline" />
+            </View>
+          </View>
+          <View style={styles.numeros}>
+            <View style={styles.numero}>
+              <Text style={styles.valor}>
+                {usuario.avaliacaoMedia.toFixed(1)} <Ionicons name="star" size={18} color={cores.estrela} />
+              </Text>
+              <Text style={styles.legenda}>{usuario.totalAvaliacoes} avaliações</Text>
+            </View>
+            <View style={styles.divisor} />
+            <View style={styles.numero}>
+              <Text style={styles.valor}>{usuario.totalViagens}</Text>
+              <Text style={styles.legenda}>viagens feitas</Text>
+            </View>
+          </View>
+        </Cartao>
+      ) : null}
+
+      {usuario && !editando ? (
+        <Cartao titulo="Sobre mim" icone="person-outline">
+          <Text style={styles.bio}>{usuario.bio || 'Conte um pouco sobre você e suas viagens.'}</Text>
+        </Cartao>
       ) : null}
 
       {editando ? (
-        <View style={styles.bloco}>
-          <Text style={styles.rotulo}>Editar perfil</Text>
-          <Campo rotulo="Nome completo" value={nome} onChangeText={setNome} placeholder="Seu nome" />
-          <CampoCidade rotulo="Cidade" valor={cidade} onChange={setCidade} placeholder="Onde você mora" />
+        <Cartao titulo="Editar perfil" icone="create-outline">
+          <Campo rotulo="Nome completo" icone="person-outline" value={nome} onChangeText={setNome} placeholder="Seu nome" />
+          <CampoCidade rotulo="Cidade" tipo="origem" valor={cidade} onChange={setCidade} placeholder="Onde você mora" />
           <Campo
             rotulo="Sobre você"
+            icone="chatbubble-ellipses-outline"
             value={bio}
             onChangeText={setBio}
             placeholder="Ex.: viajo toda sexta para visitar a família"
             multiline
           />
-          {erro ? <Text style={[styles.mensagem, styles.mensagemErro]}>{erro}</Text> : null}
-          <Botao titulo="Salvar" icone="checkmark" carregando={salvando} onPress={salvar} />
+          {erro ? <Aviso tipo="erro">{erro}</Aviso> : null}
+          <Botao titulo="Salvar" icone="checkmark" variante="verde" carregando={salvando} onPress={salvar} />
           <Botao titulo="Cancelar" variante="texto" desabilitado={salvando} onPress={() => setEditando(false)} />
-        </View>
+        </Cartao>
+      ) : usuario ? (
+        <Botao titulo="Editar perfil" icone="create-outline" variante="contorno" onPress={() => editar(usuario)} />
       ) : null}
+
+      <Botao titulo="Sair da conta" variante="perigo" icone="log-out-outline" onPress={sair} />
 
       {/* Ferramentas para a apresentação: forçar o estado de erro e voltar aos dados iniciais. */}
       <View style={styles.dev}>
@@ -128,40 +158,39 @@ export default function Perfil() {
           <Switch
             value={simularErro}
             onValueChange={alternarErro}
-            trackColor={{ true: cores.primaria, false: cores.bordaForte }}
+            trackColor={{ true: cores.verde, false: cores.bordaForte }}
           />
         </View>
-        <Botao titulo="Restaurar dados de exemplo" variante="contorno" icone="refresh" onPress={restaurar} />
+        <Botao titulo="Restaurar dados de exemplo" variante="contorno" icone="refresh" pequeno onPress={restaurar} />
       </View>
-
-      <Botao titulo="Sair" variante="perigo" icone="log-out-outline" onPress={sair} />
     </Tela>
   );
 }
 
 const styles = StyleSheet.create({
-  cabecalho: { alignItems: 'center', gap: espaco.xs, paddingTop: espaco.lg },
-  nome: { ...tipografia.tituloM, color: cores.texto, marginTop: espaco.sm },
-  detalhe: { ...tipografia.corpo, color: cores.textoSecundario },
-  bio: { ...tipografia.corpo, color: cores.texto, textAlign: 'center' },
-  botaoEditar: { marginTop: espaco.sm, alignSelf: 'stretch' },
-  bloco: {
-    backgroundColor: cores.superficie,
-    borderRadius: raio.lg,
-    borderWidth: 1,
-    borderColor: cores.borda,
-    padding: espaco.md,
-    gap: espaco.md,
-    marginTop: espaco.lg,
+  flex: { flex: 1, gap: espaco.xs },
+  identidade: { flexDirection: 'row', alignItems: 'center', gap: espaco.md },
+  nome: { ...tipografia.tituloM, color: cores.texto },
+  legenda: { ...tipografia.legenda, color: cores.textoSecundario },
+  numeros: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: espaco.md,
+    borderRadius: raio.md,
+    backgroundColor: cores.superficieAlt,
   },
-  rotulo: { ...tipografia.rotuloP, color: cores.primaria },
-  mensagem: { ...tipografia.rotuloP, padding: espaco.md, borderRadius: raio.md, textAlign: 'center' },
-  mensagemErro: { backgroundColor: cores.erroSuave, color: cores.erro },
+  numero: { flex: 1, alignItems: 'center' },
+  valor: { ...tipografia.numero, color: cores.primariaEscura },
+  divisor: { width: 1, alignSelf: 'stretch', backgroundColor: cores.borda },
+  bio: { ...tipografia.corpo, color: cores.texto },
   dev: {
     gap: espaco.sm,
     padding: espaco.md,
     borderRadius: raio.lg,
-    backgroundColor: cores.superficieAlt,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: cores.bordaForte,
+    marginTop: espaco.md,
   },
   devTitulo: { ...tipografia.rotuloP, color: cores.textoSecundario },
   devTexto: { ...tipografia.corpo, color: cores.texto, flex: 1 },

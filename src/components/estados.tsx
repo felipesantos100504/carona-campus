@@ -41,18 +41,26 @@ type PropsVazio = {
   titulo: string;
   mensagem?: string;
   icone?: NomeIcone;
-  acao?: { titulo: string; onPress: () => void };
+  acao?: { titulo: string; onPress: () => void; icone?: NomeIcone };
 };
 
 export function EstadoVazio({ titulo, mensagem, icone = 'search-outline', acao }: PropsVazio) {
   return (
-    <View style={styles.centro}>
+    <View style={[styles.centro, styles.cartao]}>
       <View style={[styles.bolha, { backgroundColor: cores.primariaSuave }]}>
         <Ionicons name={icone} size={32} color={cores.primaria} />
       </View>
       <Text style={styles.titulo}>{titulo}</Text>
       {mensagem ? <Text style={styles.mensagem}>{mensagem}</Text> : null}
-      {acao ? <Botao titulo={acao.titulo} onPress={acao.onPress} variante="contorno" /> : null}
+      {acao ? (
+        <Botao
+          titulo={acao.titulo}
+          icone={acao.icone}
+          onPress={acao.onPress}
+          variante="verde"
+          estilo={styles.acao}
+        />
+      ) : null}
     </View>
   );
 }
@@ -67,14 +75,19 @@ export function EstadoErro({
   onTentarNovamente,
 }: PropsErro) {
   return (
-    <View style={styles.centro}>
+    <View style={[styles.centro, styles.cartao, styles.cartaoErro]} accessibilityRole="alert">
       <View style={[styles.bolha, { backgroundColor: cores.erroSuave }]}>
         <Ionicons name="cloud-offline-outline" size={32} color={cores.erro} />
       </View>
-      <Text style={styles.titulo}>Algo deu errado</Text>
+      <Text style={[styles.titulo, { color: cores.erro }]}>Algo deu errado</Text>
       <Text style={styles.mensagem}>{mensagem}</Text>
       {onTentarNovamente ? (
-        <Botao titulo="Tentar novamente" icone="refresh" onPress={onTentarNovamente} />
+        <Botao
+          titulo="Tentar novamente"
+          icone="refresh"
+          onPress={onTentarNovamente}
+          estilo={styles.acao}
+        />
       ) : null}
     </View>
   );
@@ -97,10 +110,18 @@ const styles = StyleSheet.create({
   centro: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: espaco.xxl,
+    paddingVertical: espaco.xl,
     paddingHorizontal: espaco.lg,
     gap: espaco.md,
   },
+  cartao: {
+    backgroundColor: cores.superficie,
+    borderRadius: raio.lg,
+    borderWidth: 1,
+    borderColor: cores.borda,
+  },
+  cartaoErro: { borderColor: cores.erroSuave },
+  acao: { alignSelf: 'stretch' },
   bolha: {
     width: 72,
     height: 72,

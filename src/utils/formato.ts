@@ -13,6 +13,18 @@ export function formatarData(iso: string) {
   return `${DIAS_CURTOS[d.getDay()]}, ${dia}/${mes}`;
 }
 
+const DIAS_EXTENSO = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+const MESES = [
+  'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
+];
+
+/** Ex.: "Sexta-feira, 7 de novembro às 18:00". */
+export function formatarDataExtensa(iso: string) {
+  const d = new Date(iso);
+  return `${DIAS_EXTENSO[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]} às ${formatarHora(iso)}`;
+}
+
 export function formatarHora(iso: string) {
   const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;

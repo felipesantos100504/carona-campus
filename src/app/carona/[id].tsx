@@ -4,14 +4,18 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
+import { Aviso } from '@/components/aviso';
 import { Botao } from '@/components/botao';
+import { SeloVagas } from '@/components/card-carona';
+import { Cartao } from '@/components/cartao';
 import { EstadoCarregando, EstadoErro, EstadoVazio } from '@/components/estados';
+import { Selo } from '@/components/selo';
 import { Tela } from '@/components/tela';
 import { cancelarReserva, obterCarona, obterMinhaReserva, solicitarVaga } from '@/data/repositorio';
 import { ID_USUARIO_ATUAL } from '@/data/seed';
 import { useCarregamento } from '@/hooks/use-carregamento';
-import { cores, espaco, raio, tipografia } from '@/theme';
-import { formatarData, formatarDiasSemana, formatarHora, formatarMoeda } from '@/utils/formato';
+import { cores, espaco, tipografia } from '@/theme';
+import { formatarDataExtensa, formatarDiasSemana, formatarHora, formatarMoeda } from '@/utils/formato';
 
 export default function DetalhesCarona() {
   // Parâmetro recebido da lista: /carona/c1
@@ -70,124 +74,149 @@ export default function DetalhesCarona() {
     <Botao
       titulo="Cancelar minha vaga"
       variante="perigo"
+      icone="close-circle-outline"
       carregando={enviando}
       onPress={() => executar(() => cancelarReserva(reserva.id), 'Sua vaga foi cancelada.')}
     />
   ) : (
     <Botao
       titulo={lotada ? 'Carona lotada' : 'Solicitar vaga'}
-      icone="hand-right-outline"
+      icone="person-add-outline"
       desabilitado={lotada}
       carregando={enviando}
       onPress={() => executar(() => solicitarVaga(carona.id), 'Vaga reservada! Combine o pagamento com o motorista.')}
     />
   );
 
+  function legendaParada(i: number) {
+    if (i === 0) return 'Ponto de partida';
+    if (i === trajeto.length - 1) return 'Destino final';
+    return 'Parada intermediária';
+  }
+
   return (
     <Tela bordas={['bottom']} rodape={rodape}>
-      <View style={styles.bloco}>
-        <Text style={styles.quando}>
-          {formatarData(carona.dataHora)} · {formatarHora(carona.dataHora)}
-        </Text>
+      <View style={styles.topo}>
         {carona.recorrencia ? (
-          <Text style={styles.recorrente}>
-            <Ionicons name="repeat" size={14} /> Toda semana: {formatarDiasSemana(carona.recorrencia.diasSemana)}
-          </Text>
+          <Selo rotulo={`Toda semana: ${formatarDiasSemana(carona.recorrencia.diasSemana)}`} icone="repeat" />
         ) : null}
-        <View style={styles.trajeto}>
+        <Text style={styles.quando}>{formatarDataExtensa(carona.dataHora)}</Text>
+      </View>
+
+      {mensagem ? (
+        <Aviso tipo={mensagem.tipo === 'ok' ? 'sucesso' : 'erro'}>{mensagem.texto}</Aviso>
+      ) : reserva ? (
+        <Aviso tipo="sucesso">Você tem uma vaga nesta carona.</Aviso>
+      ) : minhaCarona ? (
+        <Aviso icone="car-outline">Esta é uma carona publicada por você.</Aviso>
+      ) : null}
+
+      <Cartao titulo="Itinerário planejado" icone="map-outline">
+        <View>
           {trajeto.map((cidade, i) => {
             const ponta = i === 0 || i === trajeto.length - 1;
+            const ultima = i === trajeto.length - 1;
             return (
               <View key={`${cidade}-${i}`} style={styles.parada}>
                 <View style={styles.marcadorColuna}>
-                  <View style={[styles.marcador, ponta ? styles.marcadorPonta : styles.marcadorParada]} />
-                  {i < trajeto.length - 1 ? <View style={styles.linhaTrajeto} /> : null}
+                  <View style={ponta ? styles.marcadorPonta : styles.marcadorParada} />
+                  {ultima ? null : <View style={styles.linhaTrajeto} />}
                 </View>
-                <Text style={ponta ? styles.cidadePonta : styles.cidadeParada}>{cidade}</Text>
+                <View style={styles.textosParada}>
+                  <Text style={ponta ? styles.cidadePonta : styles.cidadeParada}>{cidade}</Text>
+                  <Text style={styles.legenda}>{legendaParada(i)}</Text>
+                </View>
+                {i === 0 ? <Text style={styles.horario}>{formatarHora(carona.dataHora)}</Text> : null}
               </View>
             );
           })}
         </View>
-      </View>
+      </Cartao>
 
-      <View style={[styles.bloco, styles.linhaInfo]}>
-        <View style={styles.info}>
-          <Text style={styles.infoValor}>{formatarMoeda(carona.valorPorVaga)}</Text>
-          <Text style={styles.infoRotulo}>por vaga</Text>
+      <Cartao>
+        <View style={styles.linhaValores}>
+          <View>
+            <Text style={styles.legenda}>Contribuição</Text>
+            <Text style={styles.valor}>
+              {formatarMoeda(carona.valorPorVaga)} <Text style={styles.legenda}>/ vaga</Text>
+            </Text>
+          </View>
+          <View style={styles.disponibilidade}>
+            <Text style={styles.legenda}>Disponibilidade</Text>
+            <View>
+              <SeloVagas carona={carona} />
+            </View>
+            <Text style={styles.legenda}>de {carona.vagasTotais} no total</Text>
+          </View>
         </View>
-        <View style={styles.info}>
-          <Text style={styles.infoValor}>
-            {carona.vagasDisponiveis}/{carona.vagasTotais}
-          </Text>
-          <Text style={styles.infoRotulo}>vagas livres</Text>
-        </View>
-      </View>
-      <Text style={styles.avisoPagamento}>O pagamento é combinado diretamente com o motorista.</Text>
+        <Aviso>O pagamento é combinado diretamente com o motorista. Não intermediamos cobranças no app.</Aviso>
+      </Cartao>
 
-      <View style={[styles.bloco, styles.motorista]}>
-        <Avatar nome={motorista.nome} fotoUri={motorista.fotoUri} tamanho={56} />
-        <View style={styles.flex}>
-          <Text style={styles.nome}>{motorista.nome}</Text>
-          <Text style={styles.detalheMotorista}>
-            <Ionicons name="star" size={14} color={cores.aviso} /> {motorista.avaliacaoMedia.toFixed(1)} ·{' '}
-            {motorista.totalAvaliacoes} avaliações · {motorista.totalViagens} viagens
-          </Text>
-          {motorista.bio ? <Text style={styles.bio}>{motorista.bio}</Text> : null}
+      <Cartao>
+        <View style={styles.motorista}>
+          <Avatar nome={motorista.nome} fotoUri={motorista.fotoUri} tamanho={56} verificado />
+          <View style={styles.dadosMotorista}>
+            <View style={styles.linhaNome}>
+              <Text style={styles.nome}>{motorista.nome}</Text>
+              <Selo rotulo={motorista.avaliacaoMedia.toFixed(1)} icone="star" tom="aviso" />
+            </View>
+            <Text style={styles.legenda}>
+              {motorista.totalAvaliacoes} avaliações · {motorista.totalViagens} viagens realizadas
+            </Text>
+            <Selo rotulo="E-mail verificado" icone="shield-checkmark-outline" />
+          </View>
         </View>
-      </View>
+        {motorista.bio ? <Text style={styles.bio}>{motorista.bio}</Text> : null}
+      </Cartao>
 
       {carona.observacoes ? (
-        <View style={styles.bloco}>
-          <Text style={styles.rotulo}>Observações do motorista</Text>
-          <Text style={styles.texto}>{carona.observacoes}</Text>
-        </View>
-      ) : null}
-
-      {reserva && !mensagem ? (
-        <Text style={[styles.mensagem, styles.mensagemOk]}>Você tem uma vaga nesta carona.</Text>
-      ) : null}
-      {mensagem ? (
-        <Text style={[styles.mensagem, mensagem.tipo === 'ok' ? styles.mensagemOk : styles.mensagemErro]}>
-          {mensagem.texto}
-        </Text>
+        <Cartao titulo="Observações do motorista" icone="document-text-outline">
+          <View style={styles.observacao}>
+            <Ionicons name="location-outline" size={18} color={cores.primaria} />
+            <Text style={styles.bio}>{carona.observacoes}</Text>
+          </View>
+        </Cartao>
       ) : null}
     </Tela>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, gap: 2 },
-  bloco: {
-    backgroundColor: cores.superficie,
-    borderRadius: raio.lg,
-    borderWidth: 1,
-    borderColor: cores.borda,
-    padding: espaco.md,
-    gap: espaco.sm,
-  },
-  quando: { ...tipografia.tituloP, color: cores.primaria },
-  recorrente: { ...tipografia.legenda, color: cores.primaria },
-  trajeto: { marginTop: espaco.sm },
+  topo: { gap: espaco.sm, paddingTop: espaco.sm },
+  quando: { ...tipografia.tituloG, color: cores.texto },
   parada: { flexDirection: 'row', gap: espaco.md },
-  marcadorColuna: { alignItems: 'center', width: 16 },
-  marcador: { width: 14, height: 14, borderRadius: 7, marginTop: 5 },
-  marcadorPonta: { backgroundColor: cores.primaria },
-  marcadorParada: { backgroundColor: cores.superficie, borderWidth: 2, borderColor: cores.bordaForte },
-  linhaTrajeto: { width: 2, flex: 1, minHeight: 20, backgroundColor: cores.bordaForte },
-  cidadePonta: { ...tipografia.tituloP, color: cores.texto, paddingBottom: espaco.md },
-  cidadeParada: { ...tipografia.corpo, color: cores.textoSecundario, paddingBottom: espaco.md },
-  linhaInfo: { flexDirection: 'row' },
-  info: { flex: 1, alignItems: 'center' },
-  infoValor: { ...tipografia.tituloM, color: cores.texto },
-  infoRotulo: { ...tipografia.legenda, color: cores.textoSecundario },
-  avisoPagamento: { ...tipografia.legenda, color: cores.textoSecundario, textAlign: 'center', marginTop: -espaco.sm },
+  marcadorColuna: { alignItems: 'center', width: 20 },
+  marcadorPonta: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 4,
+    borderColor: cores.verde,
+    backgroundColor: cores.superficie,
+    marginTop: 3,
+  },
+  marcadorParada: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: cores.primaria,
+    borderWidth: 3,
+    borderColor: cores.primariaSuave,
+    marginTop: 6,
+  },
+  linhaTrajeto: { width: 2, flex: 1, minHeight: 24, backgroundColor: cores.bordaForte, marginVertical: 2 },
+  textosParada: { flex: 1, paddingBottom: espaco.md },
+  cidadePonta: { ...tipografia.rotulo, color: cores.texto },
+  cidadeParada: { ...tipografia.rotuloP, color: cores.texto },
+  horario: { ...tipografia.rotuloP, color: cores.verde },
+  legenda: { ...tipografia.legenda, color: cores.textoSecundario },
+  linhaValores: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  valor: { ...tipografia.numero, color: cores.verde },
+  disponibilidade: { alignItems: 'flex-end', gap: 2 },
   motorista: { flexDirection: 'row', alignItems: 'flex-start', gap: espaco.md },
-  nome: { ...tipografia.tituloP, color: cores.texto },
-  detalheMotorista: { ...tipografia.legenda, color: cores.textoSecundario },
-  bio: { ...tipografia.corpo, color: cores.texto, marginTop: espaco.xs },
-  rotulo: { ...tipografia.rotuloP, color: cores.texto },
-  texto: { ...tipografia.corpo, color: cores.texto },
-  mensagem: { ...tipografia.rotuloP, padding: espaco.md, borderRadius: raio.md, textAlign: 'center' },
-  mensagemOk: { backgroundColor: cores.sucessoSuave, color: cores.sucesso },
-  mensagemErro: { backgroundColor: cores.erroSuave, color: cores.erro },
+  dadosMotorista: { flex: 1, gap: espaco.xs },
+  linhaNome: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: espaco.sm },
+  nome: { ...tipografia.tituloP, color: cores.texto, flexShrink: 1 },
+  bio: { ...tipografia.corpo, color: cores.texto, flex: 1 },
+  observacao: { flexDirection: 'row', gap: espaco.sm, alignItems: 'flex-start' },
 });

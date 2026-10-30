@@ -48,7 +48,7 @@ Com o servidor rodando:
 - **Navegador:** pressione `w` no terminal ou rode `npm run web`.
 - **Emulador Android:** pressione `a` (requer Android Studio com um emulador configurado).
 
-Na primeira abertura o app grava dados de exemplo no aparelho. Para a demonstração, a aba **Perfil** tem um "Modo demonstração" com a opção de simular falta de conexão (mostra o estado de erro das listas) e de restaurar os dados de exemplo.
+Na primeira abertura o app grava dados de exemplo no aparelho. Para a demonstração, a aba **Perfil** tem um "Modo demonstração" com a opção de simular falta de conexão (mostra o estado de erro das listas) e de restaurar os dados de exemplo. Se o app já estava instalado antes de uma atualização dos dados de exemplo, use "Restaurar dados de exemplo" para carregá-los de novo.
 
 Antes de subir alterações, rode `npm run lint` e `npm run typecheck`.
 
@@ -69,7 +69,7 @@ src/
     (auth)/       login e cadastro
     (tabs)/       abas: Buscar, Publicar, Viagens, Perfil
     resultados.tsx, carona/[id].tsx, avaliar/[reservaId].tsx
-  components/     componentes reutilizáveis (Botao, Campo, CardCarona, Chip, estados...)
+  components/     componentes reutilizáveis (Botao, Campo, Cartao, CardCarona, Chip, Selo, Aviso, estados...)
   data/           tipos, dados de exemplo, repositório (AsyncStorage) e IA simulada
   hooks/          useCarregamento: carregando / erro / pronto para as listas
   theme/          cores, fontes e espaçamentos do design system (docs/DESIGN.md)
@@ -80,7 +80,9 @@ As telas acessam dados só por `src/data/repositorio.ts`. Na próxima etapa, tro
 
 ## Protótipo
 
-🔗 [Protótipo navegável no Google Stitch](https://stitch.withgoogle.com/projects/16668250046840718500)
+🔗 [Protótipo navegável no Google Stitch](https://stitch.withgoogle.com/projects/16277366381705349719)
+
+O visual do app segue esse protótipo: cores, fontes (Space Grotesk e Hanken Grotesk) e componentes estão em `src/theme` e `src/components`, documentados em [docs/DESIGN.md](docs/DESIGN.md).
 
 As telas e fluxos da proposta atual estão descritos em [docs/prototipo.md](docs/prototipo.md).
 

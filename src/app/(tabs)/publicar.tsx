@@ -1,17 +1,25 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
+import { Aviso } from '@/components/aviso';
 import { Botao } from '@/components/botao';
+import { Cabecalho } from '@/components/cabecalho';
 import { Campo } from '@/components/campo';
 import { CampoCidade } from '@/components/campo-cidade';
+import { Cartao } from '@/components/cartao';
 import { Chip } from '@/components/chip';
 import { EstadoCarregando } from '@/components/estados';
+import { Selo } from '@/components/selo';
 import { Tela } from '@/components/tela';
+import { mesmaCidade } from '@/data/cidades';
 import { extrairViagem, ViagemExtraida } from '@/data/ia';
 import { publicarCarona } from '@/data/repositorio';
-import { cores, espaco, raio, tipografia } from '@/theme';
+import { cores, espaco, raio, sombra, tipografia } from '@/theme';
 import { combinarDataHora, DIAS_CURTOS } from '@/utils/formato';
+
+const MAX_VAGAS = 8;
 
 export default function Publicar() {
   const [texto, setTexto] = useState('');
@@ -21,10 +29,11 @@ export default function Publicar() {
 
   const [origem, setOrigem] = useState('');
   const [destino, setDestino] = useState('');
-  const [paradas, setParadas] = useState('');
+  const [paradas, setParadas] = useState<string[]>([]);
+  const [novaParada, setNovaParada] = useState('');
   const [data, setData] = useState('');
   const [horario, setHorario] = useState('');
-  const [vagas, setVagas] = useState('');
+  const [vagas, setVagas] = useState(0);
   const [valor, setValor] = useState('');
   const [recorrente, setRecorrente] = useState(false);
   const [diasSemana, setDiasSemana] = useState<number[]>([]);
@@ -35,10 +44,11 @@ export default function Publicar() {
   function preencher(viagem: ViagemExtraida) {
     setOrigem(viagem.origem ?? '');
     setDestino(viagem.destino ?? '');
-    setParadas(viagem.paradas.join(', '));
+    setParadas(viagem.paradas);
+    setNovaParada('');
     setData(viagem.data ?? '');
     setHorario(viagem.horario ?? '');
-    setVagas(viagem.vagas ? String(viagem.vagas) : '');
+    setVagas(viagem.vagas ?? 0);
     setValor(viagem.valorPorVaga != null ? String(viagem.valorPorVaga) : '');
     setRecorrente(!!viagem.diasSemana);
     setDiasSemana(viagem.diasSemana ?? []);
@@ -61,6 +71,13 @@ export default function Publicar() {
     }
   }
 
+  function adicionarParada() {
+    const cidade = novaParada.trim();
+    if (!cidade) return;
+    if (!paradas.some((p) => mesmaCidade(p, cidade))) setParadas([...paradas, cidade]);
+    setNovaParada('');
+  }
+
   function alternarDia(dia: number) {
     setDiasSemana((dias) => (dias.includes(dia) ? dias.filter((d) => d !== dia) : [...dias, dia]));
   }
@@ -69,7 +86,7 @@ export default function Publicar() {
     if (!origem.trim() || !destino.trim()) return 'Informe a origem e o destino.';
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return 'Informe a data no formato AAAA-MM-DD.';
     if (!/^\d{1,2}:\d{2}$/.test(horario)) return 'Informe o horário no formato HH:MM.';
-    if (!(Number(vagas) >= 1)) return 'Informe quantas vagas você oferece.';
+    if (vagas < 1) return 'Informe quantas vagas você oferece.';
     if (!valor.trim() || !(Number(valor.replace(',', '.')) >= 0)) return 'Informe o valor por vaga.';
     if (recorrente && diasSemana.length === 0) return 'Escolha os dias da semana da viagem.';
     return null;
@@ -84,12 +101,9 @@ export default function Publicar() {
       const carona = await publicarCarona({
         origem: origem.trim(),
         destino: destino.trim(),
-        paradas: paradas
-          .split(',')
-          .map((p) => p.trim())
-          .filter(Boolean),
+        paradas,
         dataHora: combinarDataHora(data, horario),
-        vagasTotais: Number(vagas),
+        vagasTotais: vagas,
         valorPorVaga: Number(valor.replace(',', '.')),
         recorrencia: recorrente ? { diasSemana } : undefined,
         textoOriginal: texto.trim(),
@@ -106,99 +120,213 @@ export default function Publicar() {
   }
 
   const rodape = mostrarCampos ? (
-    <Botao titulo="Publicar carona" icone="checkmark-circle-outline" carregando={publicando} onPress={publicar} />
+    <Botao
+      titulo="Publicar carona"
+      icone="checkmark-circle-outline"
+      variante="verde"
+      carregando={publicando}
+      onPress={publicar}
+    />
   ) : null;
 
   return (
     <Tela rodape={rodape}>
-      <View style={styles.cabecalho}>
-        <Text style={styles.titulo}>Publicar carona</Text>
-        <Text style={styles.subtitulo}>
-          Descreva a viagem como numa mensagem de WhatsApp. A IA organiza os dados para você conferir.
-        </Text>
+      <Cabecalho titulo="Publicar carona" />
+      <View style={styles.intro}>
+        <Selo rotulo="Publicação com IA" icone="sparkles-outline" />
+        <Text style={styles.titulo}>Descreva sua viagem em texto livre</Text>
+        <Text style={styles.subtitulo}>A inteligência artificial organiza os detalhes da carona para você conferir.</Text>
       </View>
 
-      <Campo
-        rotulo="Sua viagem"
-        placeholder="Ex.: saio de Pato Branco toda sexta às 18h pra Curitiba, passo por Guarapuava e Ponta Grossa, 3 vagas, R$ 90"
-        multiline
-        value={texto}
-        onChangeText={setTexto}
-      />
-      <Botao
-        titulo="Interpretar com IA"
-        icone="sparkles-outline"
-        variante={mostrarCampos ? 'contorno' : 'primaria'}
-        desabilitado={!texto.trim()}
-        carregando={interpretando}
-        onPress={interpretar}
-      />
-      {erroIA ? <Text style={[styles.mensagem, styles.mensagemErro]}>{erroIA}</Text> : null}
+      <Cartao estilo={styles.cartaoIA}>
+        <Campo
+          rotulo="Sua viagem, como numa mensagem de WhatsApp"
+          icone="chatbubble-ellipses-outline"
+          placeholder="Ex.: saio de Pato Branco toda sexta às 18h pra Curitiba, passo por Guarapuava e Ponta Grossa, 3 vagas, R$ 90"
+          multiline
+          value={texto}
+          onChangeText={setTexto}
+        />
+        <Botao
+          titulo={mostrarCampos ? 'Interpretar novamente' : 'Interpretar com IA'}
+          icone="sparkles"
+          variante={mostrarCampos ? 'suave' : 'primaria'}
+          desabilitado={!texto.trim()}
+          carregando={interpretando}
+          onPress={interpretar}
+        />
+      </Cartao>
 
       {interpretando ? <EstadoCarregando itens={1} mensagem="Interpretando sua viagem…" /> : null}
-      {mostrarCampos ? (
-        <View style={styles.bloco}>
-          <Text style={styles.rotulo}>Confira os dados antes de publicar</Text>
-          <CampoCidade rotulo="Saindo de" valor={origem} onChange={setOrigem} placeholder="Ex.: Pato Branco" />
-          <CampoCidade rotulo="Indo para" valor={destino} onChange={setDestino} placeholder="Ex.: Curitiba" />
-          <Campo rotulo="Passa por" placeholder="Cidades separadas por vírgula" value={paradas} onChangeText={setParadas} />
-          <View style={styles.linha}>
-            <View style={styles.flex}>
-              <Campo rotulo="Data" placeholder="AAAA-MM-DD" value={data} onChangeText={setData} />
-            </View>
-            <View style={styles.flex}>
-              <Campo rotulo="Horário" placeholder="HH:MM" value={horario} onChangeText={setHorario} />
-            </View>
-          </View>
-          <View style={styles.linha}>
-            <View style={styles.flex}>
-              <Campo rotulo="Vagas" keyboardType="number-pad" value={vagas} onChangeText={setVagas} />
-            </View>
-            <View style={styles.flex}>
-              <Campo rotulo="R$ por vaga" keyboardType="decimal-pad" value={valor} onChangeText={setValor} />
-            </View>
-          </View>
-          <View style={styles.linhaSwitch}>
-            <Text style={styles.textoSwitch}>Repetir toda semana</Text>
-            <Switch
-              value={recorrente}
-              onValueChange={setRecorrente}
-              trackColor={{ true: cores.primaria, false: cores.bordaForte }}
-            />
-          </View>
-          {recorrente ? (
-            <View style={styles.dias}>
-              {DIAS_CURTOS.map((rotulo, dia) => (
-                <Chip key={rotulo} rotulo={rotulo} selecionado={diasSemana.includes(dia)} onPress={() => alternarDia(dia)} />
-              ))}
-            </View>
-          ) : null}
-        </View>
+      {mostrarCampos && erroIA ? (
+        <Aviso tipo="erro" titulo="Modo manual ativado" icone="warning-outline">
+          {erroIA}
+        </Aviso>
+      ) : null}
+      {mostrarCampos && !erroIA ? (
+        <Aviso tipo="sucesso">Dados identificados pela IA. Confira e corrija antes de publicar.</Aviso>
       ) : null}
 
-      {erro ? <Text style={[styles.mensagem, styles.mensagemErro]}>{erro}</Text> : null}
+      {mostrarCampos ? (
+        <>
+          <Cartao titulo="Estrutura da rota" icone="git-branch-outline" extra={<Selo rotulo="Intermunicipal" />}>
+            <CampoCidade rotulo="Origem da viagem" tipo="origem" valor={origem} onChange={setOrigem} placeholder="Ex.: Pato Branco" />
+            <CampoCidade rotulo="Destino final" tipo="destino" valor={destino} onChange={setDestino} placeholder="Ex.: Curitiba" />
+
+            <View style={styles.bloco}>
+              <Text style={styles.rotulo}>Paradas intermediárias</Text>
+              {paradas.length > 0 ? (
+                <View style={styles.chips}>
+                  {paradas.map((p) => (
+                    <Chip
+                      key={p}
+                      rotulo={p}
+                      icone="close-circle"
+                      onPress={() => setParadas(paradas.filter((x) => x !== p))}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.legenda}>Nenhuma parada. A viagem aparece como direta.</Text>
+              )}
+              <CampoCidade rotulo="Adicionar parada" valor={novaParada} onChange={setNovaParada} placeholder="Ex.: Guarapuava" />
+              <Botao
+                titulo="Adicionar parada"
+                icone="add-circle-outline"
+                variante="suave"
+                pequeno
+                desabilitado={!novaParada.trim()}
+                onPress={adicionarParada}
+                estilo={styles.inicio}
+              />
+            </View>
+          </Cartao>
+
+          <Cartao titulo="Quando e quanto" icone="calendar-outline">
+            <View style={styles.linha}>
+              <View style={styles.flex}>
+                <Campo rotulo="Data" icone="calendar-outline" placeholder="AAAA-MM-DD" value={data} onChangeText={setData} />
+              </View>
+              <View style={styles.flex}>
+                <Campo rotulo="Horário" icone="time-outline" placeholder="HH:MM" value={horario} onChangeText={setHorario} />
+              </View>
+            </View>
+            <View style={styles.linha}>
+              <View style={[styles.flex, styles.bloco]}>
+                <View style={styles.linhaRotulo}>
+                  <Ionicons name="people-outline" size={16} color={cores.textoSecundario} />
+                  <Text style={styles.rotulo}>Vagas</Text>
+                </View>
+                <View style={styles.contador}>
+                  <BotaoContador icone="remove" rotulo="Menos uma vaga" desabilitado={vagas <= 0} onPress={() => setVagas(vagas - 1)} />
+                  <Text style={styles.valorContador}>{vagas}</Text>
+                  <BotaoContador icone="add" rotulo="Mais uma vaga" desabilitado={vagas >= MAX_VAGAS} onPress={() => setVagas(vagas + 1)} />
+                </View>
+              </View>
+              <View style={styles.flex}>
+                <Campo
+                  rotulo="R$ por vaga"
+                  icone="cash-outline"
+                  keyboardType="decimal-pad"
+                  placeholder="90,00"
+                  value={valor}
+                  onChangeText={setValor}
+                />
+              </View>
+            </View>
+
+            <View style={styles.recorrencia}>
+              <View style={styles.linhaSwitch}>
+                <Ionicons name="repeat" size={20} color={cores.verde} />
+                <View style={styles.flex}>
+                  <Text style={styles.rotulo}>Repetir toda semana</Text>
+                  <Text style={styles.legenda}>Sem precisar publicar de novo</Text>
+                </View>
+                <Switch
+                  value={recorrente}
+                  onValueChange={setRecorrente}
+                  trackColor={{ true: cores.verde, false: cores.bordaForte }}
+                />
+              </View>
+              {recorrente ? (
+                <View style={styles.dias}>
+                  {DIAS_CURTOS.map((rotulo, dia) => (
+                    <Chip
+                      key={rotulo}
+                      rotulo={rotulo[0].toUpperCase() + rotulo.slice(1)}
+                      compacto
+                      selecionado={diasSemana.includes(dia)}
+                      onPress={() => alternarDia(dia)}
+                    />
+                  ))}
+                </View>
+              ) : null}
+            </View>
+
+            <Aviso>O valor é apenas informativo, para dividir as despesas. O acerto é feito diretamente com os passageiros.</Aviso>
+          </Cartao>
+        </>
+      ) : null}
+
+      {erro ? <Aviso tipo="erro">{erro}</Aviso> : null}
     </Tela>
   );
 }
 
+type PropsContador = {
+  icone: 'add' | 'remove';
+  rotulo: string;
+  desabilitado: boolean;
+  onPress: () => void;
+};
+
+function BotaoContador({ icone, rotulo, desabilitado, onPress }: PropsContador) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={rotulo}
+      accessibilityState={{ disabled: desabilitado }}
+      disabled={desabilitado}
+      onPress={onPress}
+      style={[styles.botaoContador, desabilitado && styles.desabilitado]}>
+      <Ionicons name={icone} size={20} color={cores.primariaEscura} />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  cabecalho: { paddingTop: espaco.lg, gap: espaco.xs },
+  intro: { gap: espaco.sm },
   titulo: { ...tipografia.tituloG, color: cores.texto },
   subtitulo: { ...tipografia.corpo, color: cores.textoSecundario },
-  bloco: {
-    backgroundColor: cores.superficie,
-    borderRadius: raio.lg,
-    borderWidth: 1,
-    borderColor: cores.borda,
-    padding: espaco.md,
-    gap: espaco.md,
-  },
-  rotulo: { ...tipografia.rotuloP, color: cores.primaria },
+  cartaoIA: { borderColor: cores.primariaBorda, ...sombra.destaqueIA },
+  bloco: { gap: espaco.sm },
+  rotulo: { ...tipografia.rotuloP, color: cores.texto },
+  legenda: { ...tipografia.legenda, color: cores.textoSecundario },
+  linhaRotulo: { flexDirection: 'row', alignItems: 'center', gap: espaco.xs },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: espaco.sm },
+  inicio: { alignSelf: 'flex-start' },
   linha: { flexDirection: 'row', gap: espaco.md },
   flex: { flex: 1 },
-  linhaSwitch: { flexDirection: 'row', alignItems: 'center', minHeight: 44 },
-  textoSwitch: { ...tipografia.corpo, color: cores.texto, flex: 1 },
-  dias: { flexDirection: 'row', flexWrap: 'wrap', gap: espaco.sm },
-  mensagem: { ...tipografia.rotuloP, padding: espaco.md, borderRadius: raio.md, textAlign: 'center' },
-  mensagemErro: { backgroundColor: cores.erroSuave, color: cores.erro },
+  contador: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 52,
+    paddingHorizontal: espaco.xs,
+    borderRadius: raio.md,
+    backgroundColor: cores.superficieAlt,
+  },
+  botaoContador: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: cores.superficie,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  desabilitado: { opacity: 0.4 },
+  valorContador: { ...tipografia.tituloP, color: cores.texto },
+  recorrencia: { gap: espaco.md, padding: espaco.md - 4, borderRadius: raio.md, backgroundColor: cores.superficieAlt },
+  linhaSwitch: { flexDirection: 'row', alignItems: 'center', gap: espaco.sm },
+  dias: { flexDirection: 'row', flexWrap: 'wrap', gap: espaco.xs },
 });

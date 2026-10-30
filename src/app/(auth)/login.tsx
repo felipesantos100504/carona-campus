@@ -1,15 +1,15 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { Botao } from '@/components/botao';
 import { Campo } from '@/components/campo';
-import { Tela } from '@/components/tela';
+import { Entrada } from '@/components/entrada';
 import { sessao } from '@/data/repositorio';
-import { cores, espaco, tipografia } from '@/theme';
+import { cores, tipografia } from '@/theme';
 
-// TODO(Integrante A): refinar visual. Autenticação real (Firebase Auth) fica
-// para a próxima etapa — por enquanto "Entrar" só grava uma sessão local.
+// Autenticação real (Firebase Auth) fica para a próxima etapa:
+// por enquanto "Entrar" só grava uma sessão local.
 export default function Login() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -22,34 +22,30 @@ export default function Login() {
   }
 
   return (
-    <Tela
-      rodape={
-        <>
-          <Botao titulo="Entrar" icone="log-in-outline" onPress={entrar} carregando={entrando} />
-          <Botao titulo="Criar conta" variante="texto" onPress={() => router.push('/cadastro')} />
-        </>
-      }>
-      <View style={styles.cabecalho}>
-        <Text style={styles.marca}>Carona Campus</Text>
-        <Text style={styles.subtitulo}>Caronas entre cidades, combinadas do seu jeito.</Text>
-      </View>
+    <Entrada aba="login">
       <Campo
         rotulo="E-mail"
-        placeholder="voce@email.com"
+        icone="at"
+        placeholder="seu@email.com"
         keyboardType="email-address"
         autoCapitalize="none"
         value={email}
         onChangeText={setEmail}
       />
-      <Campo rotulo="Senha" placeholder="••••••••" secureTextEntry value={senha} onChangeText={setSenha} />
+      <Campo
+        rotulo="Senha"
+        icone="lock-closed-outline"
+        placeholder="Digite sua senha"
+        secureTextEntry
+        value={senha}
+        onChangeText={setSenha}
+      />
+      <Botao titulo="Entrar" icone="car-outline" onPress={entrar} carregando={entrando} />
       <Text style={styles.aviso}>Protótipo: o login ainda não valida a conta.</Text>
-    </Tela>
+    </Entrada>
   );
 }
 
 const styles = StyleSheet.create({
-  cabecalho: { paddingTop: espaco.xxl, paddingBottom: espaco.lg, gap: espaco.sm },
-  marca: { ...tipografia.display, color: cores.primaria },
-  subtitulo: { ...tipografia.corpoG, color: cores.textoSecundario },
-  aviso: { ...tipografia.legenda, color: cores.textoSecundario },
+  aviso: { ...tipografia.legenda, color: cores.textoSecundario, textAlign: 'center' },
 });

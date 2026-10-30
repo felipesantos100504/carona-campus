@@ -53,6 +53,8 @@ export function gerarDadosIniciais() {
     { ...base, id: 'c8', motoristaId: 'u1', origem: 'Pato Branco', destino: 'Cascavel', paradas: ['Dois Vizinhos'], dataHora: emDias(4, 13), vagasTotais: 3, vagasDisponiveis: 0, valorPorVaga: 55 },
     { ...base, id: 'c9', motoristaId: 'u4', origem: 'Guarapuava', destino: 'Curitiba', paradas: ['Ponta Grossa'], dataHora: emDias(2, 17, 30), vagasTotais: 3, vagasDisponiveis: 2, valorPorVaga: 70 },
     { ...base, id: 'c10', motoristaId: 'u3', origem: 'Cascavel', destino: 'Toledo', paradas: [], dataHora: emDias(0, 19), vagasTotais: 2, vagasDisponiveis: 2, valorPorVaga: 15 },
+    // Carona oferecida pelo usuário atual, para a aba "Como motorista".
+    { ...base, id: 'c13', motoristaId: ID_USUARIO_ATUAL, origem: 'Pato Branco', destino: 'Curitiba', paradas: ['Guarapuava'], dataHora: proximo(5, 7), vagasTotais: 3, vagasDisponiveis: 2, valorPorVaga: 85, observacoes: 'Saio do posto da entrada da cidade.', recorrencia: { diasSemana: [5] } },
     // Viagem já realizada, usada pelo histórico do usuário atual.
     { ...base, id: 'c11', motoristaId: 'u1', origem: 'Curitiba', destino: 'Pato Branco', paradas: ['Ponta Grossa'], dataHora: emDias(-5, 9), vagasTotais: 3, vagasDisponiveis: 0, valorPorVaga: 90 },
     { ...base, id: 'c12', motoristaId: 'u2', origem: 'Pato Branco', destino: 'Francisco Beltrão', paradas: [], dataHora: emDias(-12, 18, 30), vagasTotais: 4, vagasDisponiveis: 2, valorPorVaga: 15 },
@@ -62,6 +64,7 @@ export function gerarDadosIniciais() {
     { id: 'r1', caronaId: 'c11', passageiroId: ID_USUARIO_ATUAL, status: 'concluida', criadaEm: emDias(-7, 10) },
     { id: 'r2', caronaId: 'c12', passageiroId: ID_USUARIO_ATUAL, status: 'concluida', avaliacao: 5, criadaEm: emDias(-13, 10) },
     { id: 'r3', caronaId: 'c4', passageiroId: ID_USUARIO_ATUAL, status: 'confirmada', criadaEm: agora },
+    { id: 'r4', caronaId: 'c13', passageiroId: 'u5', status: 'confirmada', criadaEm: agora },
   ];
 
   return { usuarios, caronas, reservas };
