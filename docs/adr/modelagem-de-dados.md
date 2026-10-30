@@ -71,7 +71,7 @@ Difícil de mudar depois: se decidirmos automatizar a consistência entre o cont
 ## ADR-0002 — Gerenciamento de estado e sincronização offline
 
 - **Data:** 2026-03-20
-- **Situação:** Aceita
+- **Situação:** Aceita, revisada pelo ADR-0004 (a Context API não foi usada)
 - **Quem decidiu:** Equipe de Desenvolvimento
 
 ### Contexto
@@ -141,3 +141,41 @@ Positivas: a estrutura de pastas como rotas do Expo Router acelera a criação d
 Negativas assumidas: maior acoplamento às convenções específicas do Expo Router (nomeação de arquivos, layouts aninhados), o que dificultaria migrar para React Navigation puro caso o projeto cresça além do Expo Go no futuro.
 
 Difícil de mudar depois: a organização de pastas do projeto fica atrelada à convenção de rotas do Expo Router; trocar de biblioteca de navegação mais adiante exigiria reorganizar todos os arquivos de tela do projeto.
+
+---
+
+## ADR-0004 — Camada de repositório com persistência local na etapa 2
+
+- **Data:** 2026-10-30
+- **Situação:** Aceita
+- **Quem decidiu:** Equipe de Desenvolvimento
+
+### Contexto
+
+A etapa 2 exige as telas com navegação e persistência local, sem persistência remota nem autenticação. O ADR-0002 previa o cache offline do Firestore combinado com Context API, mas o Firestore só entra na etapa 3. As telas precisavam de dados que continuassem no aparelho depois de fechar o app e de estados de carregando, vazio e erro, sem ter que ser reescritas quando o Firestore entrar.
+
+### Decisão
+
+As telas acessam dados apenas pelas funções assíncronas de `src/data/repositorio.ts`, que nesta etapa gravam no AsyncStorage (`src/data/armazenamento.ts`), com um atraso artificial e um erro de rede que pode ser simulado. Cada tela guarda o próprio estado com o hook `useCarregamento`, que recarrega os dados quando a tela ganha foco. A Context API prevista no ADR-0002 não foi usada.
+
+### Alternativas consideradas
+
+#### Context API com o estado global da aplicação (como previsto no ADR-0002)
+
+A favor: um único lugar com os dados já carregados, compartilhado entre as abas, sem recarregar a cada troca de tela.
+Contra: exigiria decidir agora quando invalidar cada parte do estado global, lógica que seria refeita na etapa 3, quando os dados passarem a vir do SDK do Firestore e do seu cache.
+Por que não: recarregar ao ganhar foco já mantém as abas atualizadas depois de uma reserva ou publicação, com menos código dentro do prazo da etapa.
+
+#### Dados fixos em memória, sem persistência
+
+A favor: nenhuma dependência e nenhum código de leitura e gravação.
+Contra: tudo se perde ao fechar o app.
+Por que não: a etapa 2 exige persistência local, e não seria possível mostrar uma reserva ou publicação continuando no aparelho depois de reabrir o app.
+
+### Consequências
+
+Positivas: trocar o AsyncStorage pelo Firestore na etapa 3 muda apenas o repositório, mantendo as assinaturas usadas pelas telas; o atraso e o erro simulados permitem demonstrar os estados de carregando e erro.
+
+Negativas assumidas: cada tela refaz a leitura ao ganhar foco, o que no Firestore significa leituras cobradas a cada troca de aba (amenizadas pelo cache do SDK); as regras do repositório são simplificadas e ainda não usam a transação prevista no ADR-0001, já que a reserva sai confirmada e o contador de vagas é atualizado sem transação.
+
+Difícil de mudar depois: as telas dependem do formato de retorno do repositório (`CaronaComMotorista`, `ReservaDetalhada`); se o Firestore exigir outro formato, a conversão precisa ficar dentro do repositório para não espalhar mudanças pelas telas.

@@ -8,6 +8,7 @@ import { Botao } from '@/components/botao';
 import { EstadoCarregando, EstadoErro, EstadoVazio } from '@/components/estados';
 import { Tela } from '@/components/tela';
 import { cancelarReserva, obterCarona, obterMinhaReserva, solicitarVaga } from '@/data/repositorio';
+import { ID_USUARIO_ATUAL } from '@/data/seed';
 import { useCarregamento } from '@/hooks/use-carregamento';
 import { cores, espaco, raio, tipografia } from '@/theme';
 import { formatarData, formatarDiasSemana, formatarHora, formatarMoeda } from '@/utils/formato';
@@ -49,6 +50,7 @@ export default function DetalhesCarona() {
   const trajeto = [carona.origem, ...carona.paradas, carona.destino];
   const lotada = carona.vagasDisponiveis <= 0;
   const viagemPassada = new Date(carona.dataHora).getTime() < Date.now();
+  const minhaCarona = carona.motoristaId === ID_USUARIO_ATUAL;
 
   async function executar(acao: () => Promise<unknown>, sucesso: string) {
     setEnviando(true);
@@ -64,7 +66,7 @@ export default function DetalhesCarona() {
     }
   }
 
-  const rodape = viagemPassada ? null : reserva ? (
+  const rodape = viagemPassada || minhaCarona ? null : reserva ? (
     <Botao
       titulo="Cancelar minha vaga"
       variante="perigo"

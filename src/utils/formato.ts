@@ -1,4 +1,4 @@
-const DIAS_CURTOS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+export const DIAS_CURTOS =['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 
 export function formatarData(iso: string) {
   const d = new Date(iso);

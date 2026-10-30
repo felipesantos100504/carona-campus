@@ -130,7 +130,7 @@ O aplicativo organiza-se sob dois paradigmas estruturais de navegação:
   * **Recorrência (RF-05):** switch `Repetir toda semana` + chips dos dias (`dom` a `sáb`).
   * **Ação Corretiva:** todos os campos podem ser editados; se a IA falhar, **`Estado: IA falhou`** libera os campos vazios para preenchimento manual (RF-16).
   * **CTA Primário:** `Publicar carona`.
-    * *Ação:* Salva a viagem e redireciona para a aba `Viagens`.
+    * *Ação:* Salva a viagem e abre os detalhes da carona publicada (`carona/[id]`).
 
 ---
 

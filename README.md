@@ -58,6 +58,7 @@ Antes de subir alterações, rode `npm run lint` e `npm run typecheck`.
 - Persistência **local** com AsyncStorage. Ainda não há Firebase nem autenticação real: o login só grava uma sessão no aparelho.
 - A extração da IA é **simulada** (`src/data/ia.ts`). Ela tem a mesma assinatura que a integração com o Gemini terá na próxima etapa.
 - As listas tratam os estados de carregando, vazio e erro.
+- Regras de negócio simplificadas nesta etapa: a solicitação de vaga já sai confirmada (a confirmação pelo motorista, RF-08, entra com o Firestore), a avaliação ainda não recalcula a média do motorista e a busca considera só a próxima saída das viagens recorrentes.
 
 ## Estrutura do código
 
