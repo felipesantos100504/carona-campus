@@ -5,12 +5,24 @@
 // Rodar:  npm run exportar
 // Usa a mesma chave de conta de serviço do popular-banco.mjs (./chave-servico.json).
 // Fotos em base64 são abreviadas para o arquivo continuar legível.
+//
+// Por padrão exporta só os documentos de demonstração (ids que começam com
+// "demo-"), para não publicar no repositório os dados de usuários reais.
+// Para exportar tudo: npm run exportar -- --tudo
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 import { cert, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
 const COLECOES = ['usuarios', 'caronas', 'reservas', 'avaliacoes'];
+const SO_DEMONSTRACAO = !process.argv.includes('--tudo');
+
+/** Documento de demonstração: o próprio id ou o de quem participa começa com "demo-". */
+function ehDemonstracao(id, dados) {
+  if (id.startsWith('demo-')) return true;
+  return ['motoristaId', 'passageiroId', 'autorId', 'avaliadoId'].every((campo) => !dados[campo] || dados[campo].startsWith('demo-'))
+    && ['motoristaId', 'passageiroId', 'autorId'].some((campo) => dados[campo]);
+}
 const DESTINO = 'docs/estrutura-firestore.json';
 
 function iniciar() {
@@ -39,14 +51,16 @@ const db = getFirestore(iniciar());
 const saida = {
   _sobre:
     'Estrutura do Cloud Firestore do Carona Campus, exportada a partir dos itens cadastrados. ' +
-    'Cada coleção é um objeto { idDoDocumento: campos }. Regras de acesso em firestore.rules.',
+    'Cada coleção é um objeto { idDoDocumento: campos }. Contém só os dados de demonstração ' +
+    '(scripts/dados-exemplo.mjs). Regras de acesso em firestore.rules.',
   _exportadoEm: new Date().toISOString(),
 };
 
 for (const nome of COLECOES) {
   const snap = await db.collection(nome).get();
-  saida[nome] = Object.fromEntries(snap.docs.map((d) => [d.id, abreviar(d.data())]));
-  console.log(`✔ ${nome}: ${snap.size} documentos`);
+  const docs = snap.docs.filter((d) => !SO_DEMONSTRACAO || ehDemonstracao(d.id, d.data()));
+  saida[nome] = Object.fromEntries(docs.map((d) => [d.id, abreviar(d.data())]));
+  console.log(`✔ ${nome}: ${docs.length} documentos${SO_DEMONSTRACAO ? ` (de ${snap.size}; só demonstração)` : ''}`);
 }
 
 writeFileSync(DESTINO, JSON.stringify(saida, null, 2) + '\n');
