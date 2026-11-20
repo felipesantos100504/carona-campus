@@ -1,11 +1,14 @@
-import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from 'firebase/ai';
+import { getAI, getGenerativeModel, GoogleAIBackend } from 'firebase/ai';
 
 import { APELIDOS, CIDADES, normalizar } from './cidades';
 import { extrairViagemLocal } from './extracao-local';
 import { app } from './firebase';
 
-// Funcionalidade de IA (PRD, seção 6): o Gemini transforma o texto livre do
-// motorista nos campos da viagem. Só o texto digitado é enviado ao modelo.
+// Funcionalidade de IA (PRD, seção 6): o Gemini transforma texto livre em
+// dados estruturados em dois pontos do app:
+// - publicação: o motorista descreve a viagem e a IA preenche os campos;
+// - busca: o passageiro diz para onde quer ir e a IA preenche a busca.
+// Só o texto digitado é enviado ao modelo.
 //
 // Duas formas de chamar o Gemini (ADR-0007):
 // - Com EXPO_PUBLIC_GEMINI_API_KEY no .env: chamada direta à Gemini API com a
@@ -20,6 +23,8 @@ export type ViagemExtraida = {
   origem?: string;
   destino?: string;
   paradas: string[];
+  /** Local de embarque dentro da cidade de origem (ex.: "Posto Fênix"). */
+  pontoEmbarque?: string;
   /** AAAA-MM-DD */
   data?: string;
   /** HH:MM */
@@ -29,6 +34,19 @@ export type ViagemExtraida = {
   /** 0 = domingo ... 6 = sábado. Só vem preenchido em viagens recorrentes. */
   diasSemana?: number[];
   /** De onde vieram os dados: do Gemini ou da extração por regras (plano B). */
+  fonte: 'ia' | 'regras';
+};
+
+/** O que o passageiro pediu na busca em texto livre. */
+export type BuscaExtraida = {
+  origem?: string;
+  destino?: string;
+  /** Onde o passageiro quer embarcar, dentro da cidade (ex.: "Posto Fênix"). */
+  pontoEmbarque?: string;
+  /** AAAA-MM-DD */
+  data?: string;
+  /** HH:MM */
+  horario?: string;
   fonte: 'ia' | 'regras';
 };
 
@@ -44,128 +62,26 @@ const CHAVE_GEMINI = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 const TEMPO_LIMITE_MS = 15000;
 const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
-// Formato obrigatório da resposta (structured output): o modelo só pode
-// devolver um JSON com estes campos.
-const esquema = Schema.object({
-  properties: {
-    origem: Schema.string({ description: 'Cidade de partida' }),
-    destino: Schema.string({ description: 'Cidade final da viagem' }),
-    paradas: Schema.array({
-      items: Schema.string(),
-      description: 'Cidades intermediárias citadas, na ordem do trajeto',
-    }),
-    data: Schema.string({ description: 'Data da (primeira) saída no formato AAAA-MM-DD' }),
-    horario: Schema.string({ description: 'Horário de saída no formato HH:MM (24h)' }),
-    vagas: Schema.integer({ description: 'Quantidade de vagas oferecidas' }),
-    valorPorVaga: Schema.number({ description: 'Valor em reais por vaga' }),
-    diasSemana: Schema.array({
-      items: Schema.integer(),
-      description: 'Dias da semana em que a viagem se repete (0=domingo...6=sábado). Vazio se não for recorrente.',
-    }),
-  },
-  optionalProperties: ['origem', 'destino', 'data', 'horario', 'vagas', 'valorPorVaga', 'diasSemana'],
-});
+// ---------- formatos de resposta (structured output) ----------
+// O modelo só pode devolver um JSON com estes campos.
 
-const modelo = getGenerativeModel(getAI(app, { backend: new GoogleAIBackend() }), {
-  model: MODELO,
-  generationConfig: { responseMimeType: 'application/json', responseSchema: esquema, temperature: 0 },
-});
+type Esquema = { type: string; description?: string; properties?: Record<string, Esquema>; items?: Esquema; required?: string[] };
 
-function instrucoes(texto: string) {
-  const hoje = new Date();
-  const dataHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
-  return [
-    'Você organiza anúncios de carona entre cidades brasileiras.',
-    `Hoje é ${DIAS[hoje.getDay()]}, ${dataHoje}. Converta "hoje", "amanhã" e dias da semana em datas a partir de hoje.`,
-    'Regras:',
-    '- Escreva os nomes das cidades por extenso, com acentos e iniciais maiúsculas (ex.: "Francisco Beltrão").',
-    '- "data" é a próxima saída. Se a viagem se repete ("toda sexta", "de segunda a sexta"), preencha também "diasSemana".',
-    '- Horários como "18h", "6 da tarde" ou "por volta das sete da noite" viram "18:00", "18:00" e "19:00".',
-    '- Não invente informações: omita os campos que o texto não informa.',
-    '',
-    `Anúncio: """${texto}"""`,
-  ].join('\n');
-}
+const texto = (description: string): Esquema => ({ type: 'STRING', description });
 
-/** Usa a grafia do catálogo quando a cidade é conhecida ("São Jorge" → "São Jorge d'Oeste"). */
-function cidade(nome?: string) {
-  if (!nome) return undefined;
-  const n = normalizar(nome);
-  return CIDADES.find((c) => normalizar(c) === n) ?? APELIDOS[n] ?? nome;
-}
+const CAMPOS_COMUNS: Record<string, Esquema> = {
+  origem: texto('CIDADE de partida (nunca um bairro, rua ou estabelecimento)'),
+  destino: texto('CIDADE de chegada (nunca um bairro, rua ou estabelecimento)'),
+  pontoEmbarque: texto('Local de embarque dentro da cidade de origem, como citado (ex.: "Posto Fênix", "rodoviária")'),
+  data: texto('Data da (primeira) saída no formato AAAA-MM-DD'),
+  horario: texto('Horário de saída no formato HH:MM (24h)'),
+};
 
-/** Confere cada campo da resposta; o que vier fora do formato é descartado. */
-function validar(bruto: unknown): Omit<ViagemExtraida, 'fonte'> | null {
-  if (!bruto || typeof bruto !== 'object') return null;
-  const r = bruto as Record<string, unknown>;
-  const texto = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
-  const data = texto(r.data);
-  const horario = texto(r.horario);
-  const vagas = typeof r.vagas === 'number' && Number.isInteger(r.vagas) && r.vagas >= 1 && r.vagas <= 8 ? r.vagas : undefined;
-  const valor = typeof r.valorPorVaga === 'number' && r.valorPorVaga >= 0 && r.valorPorVaga < 10000 ? r.valorPorVaga : undefined;
-  const dias = Array.isArray(r.diasSemana)
-    ? [...new Set(r.diasSemana.filter((d): d is number => Number.isInteger(d) && d >= 0 && d <= 6))]
-    : [];
-  const resultado = {
-    origem: cidade(texto(r.origem)),
-    destino: cidade(texto(r.destino)),
-    paradas: Array.isArray(r.paradas) ? r.paradas.map((p) => cidade(texto(p))).filter((p): p is string => !!p) : [],
-    data: data && /^\d{4}-\d{2}-\d{2}$/.test(data) && !isNaN(Date.parse(data)) ? data : undefined,
-    horario: horario && /^([01]\d|2[0-3]):[0-5]\d$/.test(horario) ? horario : undefined,
-    vagas,
-    valorPorVaga: valor,
-    diasSemana: dias.length ? dias.sort() : undefined,
-  };
-  return resultado.origem || resultado.destino ? resultado : null;
-}
-
-async function perguntarAoGemini(texto: string) {
-  let temporizador: ReturnType<typeof setTimeout> | undefined;
-  const limite = new Promise<never>((_, rejeitar) => {
-    temporizador = setTimeout(() => rejeitar(new Error('A IA demorou demais para responder.')), TEMPO_LIMITE_MS);
-  });
-  try {
-    const chamada = CHAVE_GEMINI ? viaGeminiApi(texto, CHAVE_GEMINI) : viaAiLogic(texto);
-    return validar(JSON.parse(await Promise.race([chamada, limite])));
-  } finally {
-    clearTimeout(temporizador);
-  }
-}
-
-async function viaAiLogic(texto: string) {
-  const resposta = await modelo.generateContent(instrucoes(texto));
-  return resposta.response.text();
-}
-
-/** Chamada direta à Gemini API (REST), com a mesma saída estruturada. */
-async function viaGeminiApi(texto: string, chave: string) {
-  const resposta = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': chave },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: instrucoes(texto) }] }],
-        generationConfig: { responseMimeType: 'application/json', responseSchema: ESQUEMA_REST, temperature: 0 },
-      }),
-    },
-  );
-  if (!resposta.ok) throw new Error(`Gemini API respondeu ${resposta.status}`);
-  const corpo = await resposta.json();
-  const parte = corpo?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (typeof parte !== 'string') throw new Error('Resposta da Gemini API sem texto.');
-  return parte;
-}
-
-// O mesmo esquema de resposta, no formato da API REST do Gemini.
-const ESQUEMA_REST = {
+const ESQUEMA_PUBLICACAO: Esquema = {
   type: 'OBJECT',
   properties: {
-    origem: { type: 'STRING', description: 'Cidade de partida' },
-    destino: { type: 'STRING', description: 'Cidade final da viagem' },
+    ...CAMPOS_COMUNS,
     paradas: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Cidades intermediárias citadas, na ordem do trajeto' },
-    data: { type: 'STRING', description: 'Data da (primeira) saída no formato AAAA-MM-DD' },
-    horario: { type: 'STRING', description: 'Horário de saída no formato HH:MM (24h)' },
     vagas: { type: 'INTEGER', description: 'Quantidade de vagas oferecidas' },
     valorPorVaga: { type: 'NUMBER', description: 'Valor em reais por vaga' },
     diasSemana: {
@@ -177,18 +93,184 @@ const ESQUEMA_REST = {
   required: ['paradas'],
 };
 
-export async function extrairViagem(texto: string): Promise<ViagemExtraida> {
-  if (texto.trim().length < 8) throw new ErroExtracao('Descreva a viagem com um pouco mais de detalhes.');
+const ESQUEMA_BUSCA: Esquema = { type: 'OBJECT', properties: CAMPOS_COMUNS };
+
+/** O SDK do Firebase AI Logic usa os mesmos esquemas, com os tipos em minúsculas. */
+function paraAiLogic(e: Esquema): Esquema {
+  return {
+    ...e,
+    type: e.type.toLowerCase(),
+    items: e.items && paraAiLogic(e.items),
+    properties: e.properties && Object.fromEntries(Object.entries(e.properties).map(([k, v]) => [k, paraAiLogic(v)])),
+  };
+}
+
+// ---------- instruções ----------
+
+function cabecalho() {
+  const hoje = new Date();
+  const dataHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+  return [
+    `Hoje é ${DIAS[hoje.getDay()]}, ${dataHoje}. Converta "hoje", "amanhã" e dias da semana em datas a partir de hoje.`,
+    'Regras:',
+    '- "origem", "destino" e "paradas" são sempre CIDADES, escritas por extenso, com acentos e iniciais maiúsculas (ex.: "Francisco Beltrão").',
+    '- Lugares dentro de uma cidade (universidade, posto, rodoviária, mercado, bairro) nunca vão em origem/destino. Se for o local de saída, vai em "pontoEmbarque"; senão, ignore.',
+    '- Horários como "18h", "6 da tarde" ou "por volta das sete da noite" viram "18:00", "18:00" e "19:00".',
+    '- Não invente informações: omita os campos que o texto não informa.',
+  ];
+}
+
+function instrucoesPublicacao(textoLivre: string) {
+  return [
+    'Você organiza anúncios de carona entre cidades brasileiras, escritos pelo motorista.',
+    ...cabecalho(),
+    '- "data" é a próxima saída. Se a viagem se repete ("toda sexta", "todos os dias", "de segunda a sexta"), preencha também "diasSemana".',
+    '',
+    `Anúncio: """${textoLivre}"""`,
+  ].join('\n');
+}
+
+function instrucoesBusca(textoLivre: string) {
+  return [
+    'Você interpreta o pedido de um passageiro que procura carona entre cidades brasileiras.',
+    ...cabecalho(),
+    '- "data" é o dia em que o passageiro quer viajar; "horario" é o horário aproximado de saída que ele pediu.',
+    '',
+    `Pedido: """${textoLivre}"""`,
+  ].join('\n');
+}
+
+// ---------- validação ----------
+
+/** Usa a grafia do catálogo quando a cidade é conhecida ("São Jorge" → "São Jorge d'Oeste"). */
+function cidade(nome?: string) {
+  if (!nome) return undefined;
+  const n = normalizar(nome);
+  return CIDADES.find((c) => normalizar(c) === n) ?? APELIDOS[n] ?? nome;
+}
+
+const textoValido = (v: unknown, maximo = 80) =>
+  typeof v === 'string' && v.trim() && v.trim().length <= maximo ? v.trim() : undefined;
+
+function validarComuns(r: Record<string, unknown>) {
+  const data = textoValido(r.data);
+  const horario = textoValido(r.horario);
+  return {
+    origem: cidade(textoValido(r.origem)),
+    destino: cidade(textoValido(r.destino)),
+    pontoEmbarque: textoValido(r.pontoEmbarque, 120),
+    data: data && /^\d{4}-\d{2}-\d{2}$/.test(data) && !isNaN(Date.parse(data)) ? data : undefined,
+    horario: horario && /^([01]\d|2[0-3]):[0-5]\d$/.test(horario) ? horario : undefined,
+  };
+}
+
+/** Confere cada campo da resposta; o que vier fora do formato é descartado. */
+function validarPublicacao(bruto: unknown): Omit<ViagemExtraida, 'fonte'> | null {
+  if (!bruto || typeof bruto !== 'object') return null;
+  const r = bruto as Record<string, unknown>;
+  const vagas = typeof r.vagas === 'number' && Number.isInteger(r.vagas) && r.vagas >= 1 && r.vagas <= 8 ? r.vagas : undefined;
+  const valor = typeof r.valorPorVaga === 'number' && r.valorPorVaga >= 0 && r.valorPorVaga < 10000 ? r.valorPorVaga : undefined;
+  const dias = Array.isArray(r.diasSemana)
+    ? [...new Set(r.diasSemana.filter((d): d is number => Number.isInteger(d) && d >= 0 && d <= 6))]
+    : [];
+  const resultado = {
+    ...validarComuns(r),
+    paradas: Array.isArray(r.paradas) ? r.paradas.map((p) => cidade(textoValido(p))).filter((p): p is string => !!p) : [],
+    vagas,
+    valorPorVaga: valor,
+    diasSemana: dias.length ? dias.sort() : undefined,
+  };
+  return resultado.origem || resultado.destino ? resultado : null;
+}
+
+function validarBusca(bruto: unknown): Omit<BuscaExtraida, 'fonte'> | null {
+  if (!bruto || typeof bruto !== 'object') return null;
+  const resultado = validarComuns(bruto as Record<string, unknown>);
+  return Object.values(resultado).some(Boolean) ? resultado : null;
+}
+
+// ---------- chamada ao Gemini ----------
+
+const ai = getAI(app, { backend: new GoogleAIBackend() });
+
+async function perguntarAoGemini(prompt: string, esquema: Esquema): Promise<unknown> {
+  let temporizador: ReturnType<typeof setTimeout> | undefined;
+  const limite = new Promise<never>((_, rejeitar) => {
+    temporizador = setTimeout(() => rejeitar(new Error('A IA demorou demais para responder.')), TEMPO_LIMITE_MS);
+  });
+  try {
+    const chamada = CHAVE_GEMINI ? viaGeminiApi(prompt, esquema, CHAVE_GEMINI) : viaAiLogic(prompt, esquema);
+    return JSON.parse(await Promise.race([chamada, limite]));
+  } finally {
+    clearTimeout(temporizador);
+  }
+}
+
+async function viaAiLogic(prompt: string, esquema: Esquema) {
+  const modelo = getGenerativeModel(ai, {
+    model: MODELO,
+    generationConfig: {
+      responseMimeType: 'application/json',
+      // O formato é o mesmo do SDK; o tipo do SDK não aceita o objeto literal.
+      responseSchema: paraAiLogic(esquema) as never,
+      temperature: 0,
+    },
+  });
+  const resposta = await modelo.generateContent(prompt);
+  return resposta.response.text();
+}
+
+/** Chamada direta à Gemini API (REST), com a mesma saída estruturada. */
+async function viaGeminiApi(prompt: string, esquema: Esquema, chave: string) {
+  const resposta = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': chave },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json', responseSchema: esquema, temperature: 0 },
+    }),
+  });
+  if (!resposta.ok) throw new Error(`Gemini API respondeu ${resposta.status}`);
+  const corpo = await resposta.json();
+  const parte = corpo?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (typeof parte !== 'string') throw new Error('Resposta da Gemini API sem texto.');
+  return parte;
+}
+
+// ---------- funções usadas pelas telas ----------
+
+/** Publicação (motorista): texto livre → campos da viagem. */
+export async function extrairViagem(textoLivre: string): Promise<ViagemExtraida> {
+  if (textoLivre.trim().length < 8) throw new ErroExtracao('Descreva a viagem com um pouco mais de detalhes.');
 
   try {
-    const viagem = await perguntarAoGemini(texto);
+    const viagem = validarPublicacao(await perguntarAoGemini(instrucoesPublicacao(textoLivre), ESQUEMA_PUBLICACAO));
     if (viagem) return { ...viagem, fonte: 'ia' };
   } catch (e) {
     // Falha de rede, cota, chave ou JSON inválido: segue para o plano B.
     console.warn('[IA] Gemini indisponível, usando extração por regras:', e);
   }
 
-  const local = extrairViagemLocal(texto);
+  const local = extrairViagemLocal(textoLivre);
   if (local) return { ...local, fonte: 'regras' };
   throw new ErroExtracao();
+}
+
+/** Busca (passageiro): texto livre → origem, destino, data, horário e ponto de embarque. */
+export async function interpretarBusca(textoLivre: string): Promise<BuscaExtraida> {
+  if (textoLivre.trim().length < 5) throw new ErroExtracao('Diga para onde você quer ir.');
+
+  try {
+    const busca = validarBusca(await perguntarAoGemini(instrucoesBusca(textoLivre), ESQUEMA_BUSCA));
+    if (busca) return { ...busca, fonte: 'ia' };
+  } catch (e) {
+    console.warn('[IA] Gemini indisponível, usando extração por regras:', e);
+  }
+
+  const local = extrairViagemLocal(textoLivre);
+  if (local) {
+    const { origem, destino, pontoEmbarque, data, horario } = local;
+    return { origem, destino, pontoEmbarque, data, horario, fonte: 'regras' };
+  }
+  throw new ErroExtracao('Não entendemos o pedido. Preencha as cidades nos campos da busca.');
 }

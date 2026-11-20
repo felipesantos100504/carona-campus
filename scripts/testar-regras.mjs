@@ -110,6 +110,13 @@ describe('caronas', () => {
     );
   });
 
+  test('aceita ponto de embarque curto e recusa texto enorme', async () => {
+    await assertSucceeds(setDoc(doc(verificado(ANA), 'caronas', CARONA), caronaValida({ pontoEmbarque: 'Posto Fênix' })));
+    await assertFails(
+      setDoc(doc(verificado(ANA), 'caronas', 'outra'), caronaValida({ pontoEmbarque: 'x'.repeat(500) })),
+    );
+  });
+
   test('passageiro não mexe no contador de vagas sem cancelar uma vaga', async () => {
     await preparar({ [`caronas/${CARONA}`]: caronaValida({ vagasDisponiveis: 2 }) });
     await assertFails(updateDoc(doc(verificado(BRUNO), 'caronas', CARONA), { vagasDisponiveis: 3 }));

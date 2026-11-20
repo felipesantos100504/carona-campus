@@ -31,6 +31,7 @@ export default function Publicar() {
   const [origem, setOrigem] = useState('');
   const [destino, setDestino] = useState('');
   const [paradas, setParadas] = useState<string[]>([]);
+  const [pontoEmbarque, setPontoEmbarque] = useState('');
   const [novaParada, setNovaParada] = useState('');
   const [data, setData] = useState('');
   const [horario, setHorario] = useState('');
@@ -47,6 +48,7 @@ export default function Publicar() {
     setOrigem(viagem.origem ?? '');
     setDestino(viagem.destino ?? '');
     setParadas(viagem.paradas);
+    setPontoEmbarque(viagem.pontoEmbarque ?? '');
     setNovaParada('');
     setData(viagem.data ?? '');
     setHorario(viagem.horario ?? '');
@@ -104,6 +106,7 @@ export default function Publicar() {
         origem: origem.trim(),
         destino: destino.trim(),
         paradas,
+        pontoEmbarque: pontoEmbarque.trim() || undefined,
         dataHora: combinarDataHora(data, horario),
         vagasTotais: vagas,
         valorPorVaga: Number(valor.replace(',', '.')),
@@ -144,7 +147,7 @@ export default function Publicar() {
         <Campo
           rotulo="Sua viagem, como numa mensagem de WhatsApp"
           icone="chatbubble-ellipses-outline"
-          placeholder="Ex.: saio de Pato Branco toda sexta às 18h pra Curitiba, passo por Guarapuava e Ponta Grossa, 3 vagas, R$ 90"
+          placeholder="Ex.: saio do Posto Fênix em Pato Branco toda sexta às 18h pra Curitiba, passo por Guarapuava, 3 vagas, R$ 90"
           multiline
           value={texto}
           onChangeText={setTexto}
@@ -178,6 +181,14 @@ export default function Publicar() {
         <>
           <Cartao titulo="Estrutura da rota" icone="git-branch-outline" extra={<Selo rotulo="Intermunicipal" />}>
             <CampoCidade rotulo="Origem da viagem" tipo="origem" valor={origem} onChange={setOrigem} placeholder="Ex.: Pato Branco" />
+            <Campo
+              rotulo="Ponto de embarque (opcional)"
+              icone="flag-outline"
+              value={pontoEmbarque}
+              onChangeText={setPontoEmbarque}
+              placeholder="Ex.: Posto Fênix, rodoviária"
+              maxLength={120}
+            />
             <CampoCidade rotulo="Destino final" tipo="destino" valor={destino} onChange={setDestino} placeholder="Ex.: Curitiba" />
 
             <View style={styles.bloco}>

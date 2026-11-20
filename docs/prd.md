@@ -28,6 +28,8 @@ Pessoas que fazem viagens intermunicipais com regularidade — estudantes, traba
 | RF-14 | Usuário tenta realizar uma ação sem conexão de rede. | Sistema exibe aviso de falta de conexão e impede o envio até a conexão ser restabelecida. |
 | RF-15 | Dois usuários solicitam a mesma vaga ao mesmo tempo. | Sistema confirma apenas a primeira solicitação aceita pelo motorista e informa às demais que a vaga não está mais disponível. |
 | RF-16 | A extração de dados pela IA falha ou responde fora do formato esperado. | Sistema mantém todos os campos da viagem disponíveis para preenchimento manual pelo motorista. |
+| RF-17 | Passageiro descreve em texto livre a carona de que precisa (ex.: "preciso ir pra Cascavel sexta à noite, saindo do Posto Fênix em Quedas do Iguaçu"). | Sistema extrai origem, destino, data, horário aproximado e ponto de embarque, preenche a busca e mostra as caronas que saem até 1h30 antes ou depois do horário pedido, com as que saem do ponto de embarque pedido em primeiro lugar. Se o pedido não citar cidades, o sistema avisa e pede as cidades nos campos. |
+| RF-18 | Motorista informa o ponto de embarque dentro da cidade de origem (ex.: "Posto Fênix", "rodoviária"). | Sistema salva o ponto (opcional, digitado ou extraído pela IA) e o exibe na lista de caronas e nos detalhes da viagem. |
 
 ## 4. Requisitos não funcionais
 
@@ -42,34 +44,42 @@ Pessoas que fazem viagens intermunicipais com regularidade — estudantes, traba
 
 ## 5. Onde a IA entra no produto
 
-A Inteligência Artificial (LLM via Gemini) é usada em um único ponto: **interpretar o texto livre que o motorista escreve ao publicar uma viagem** e organizá-lo nos campos estruturados da viagem (origem, destino, paradas, data, horário, vagas, valor por vaga e dias de recorrência). O motorista escreve como se estivesse mandando uma mensagem no WhatsApp — por exemplo, "saio de Pato Branco toda sexta às 18h pra Curitiba, passo por Guarapuava e Ponta Grossa, 3 vagas, R$ 90" — e confirma os dados organizados pela IA antes de publicar.
+A Inteligência Artificial (LLM via Gemini) **interpreta texto livre** nos dois lados da carona:
 
-A busca e a compatibilidade entre viagens **não** usam IA: são feitas por regras programadas no sistema (a viagem serve se passa pela cidade de origem e depois pela cidade de destino buscadas, na data escolhida). Isso deixa a busca mais rápida, previsível e independente da disponibilidade da API.
+- **Motorista (publicação):** organiza a mensagem do motorista nos campos da viagem (origem, destino, paradas, ponto de embarque, data, horário, vagas, valor por vaga e dias de recorrência). O motorista escreve como se estivesse mandando uma mensagem no WhatsApp — por exemplo, "saio do Posto Fênix em Pato Branco toda sexta às 18h pra Curitiba, passo por Guarapuava e Ponta Grossa, 3 vagas, R$ 90" — e confirma os dados antes de publicar.
+- **Passageiro (busca):** transforma o pedido do passageiro ("preciso ir pra Cascavel sexta à noite, saindo do Posto Fênix em Quedas do Iguaçu") em origem, destino, data, horário aproximado e ponto de embarque, e já abre os resultados.
+
+A **compatibilidade** entre viagens continua **sem** IA: depois que a IA preenche os campos, a busca aplica regras programadas (a viagem serve se passa pela cidade de origem e depois pela de destino, na data escolhida e perto do horário pedido). Isso deixa o resultado rápido, previsível e independente da disponibilidade da API (RNF-06).
 
 ### Impacto de remoção: o que o produto perde sem a IA
 
-Sem a IA, a publicação volta a ser um formulário com vários campos (origem, destino, cada parada, data, horário, vagas, valor e dias da semana), que é justamente o atrito que faz os motoristas preferirem jogar a viagem num grupo de mensagens. O app continua funcionando — o preenchimento manual existe como alternativa (RF-16) —, mas perde o principal diferencial de publicação: transformar a mensagem que o motorista já escreveria no WhatsApp em uma viagem pesquisável.
+Sem a IA, a publicação volta a ser um formulário com vários campos (origem, destino, cada parada, data, horário, vagas, valor e dias da semana), que é justamente o atrito que faz os motoristas preferirem jogar a viagem num grupo de mensagens. Do lado do passageiro, a busca volta a exigir que ele traduza o que precisa ("sexta à noite, saindo do posto") em campos e chips de data. O app continua funcionando — o preenchimento manual existe como alternativa (RF-16) —, mas perde o principal diferencial de publicação: transformar a mensagem que o motorista já escreveria no WhatsApp em uma viagem pesquisável.
 
 ## 6. Funcionalidade de IA
 
-**O que faz:** interpreta a descrição em texto livre de uma viagem e organiza as informações nos campos da publicação.
+**O que faz:** interpreta texto livre e organiza as informações nos campos da publicação (motorista) ou da busca (passageiro).
 
-**Entrada:** o texto livre digitado pelo motorista ao publicar uma viagem (ex.: "saio de Pato Branco sexta 18h pra Curitiba, passo por Guarapuava, 3 vagas, R$ 90").
+**Entrada:** o texto digitado pelo motorista ao publicar (ex.: "saio do Posto Fênix em Pato Branco sexta 18h pra Curitiba, passo por Guarapuava, 3 vagas, R$ 90") ou pelo passageiro ao buscar (ex.: "preciso ir pra Cascavel sexta à noite, saindo do Posto Fênix em Quedas do Iguaçu").
 
-**Saída:** origem, destino, paradas intermediárias, data, horário, quantidade de vagas, valor por vaga e dias da semana (quando a viagem é recorrente); o motorista confirma os dados extraídos (ou corrige manualmente) antes de a viagem ser salva no banco.
+**Saída:**
+- **Publicação:** origem, destino, paradas intermediárias, ponto de embarque, data, horário, quantidade de vagas, valor por vaga e dias da semana (quando a viagem é recorrente). O motorista confirma os dados (ou corrige) antes de a viagem ser salva no banco.
+- **Busca:** origem, destino, data, horário aproximado e ponto de embarque, que preenchem a busca e abrem os resultados. O passageiro pode ajustar tudo pelos campos.
+
+Lugares dentro de uma cidade (universidade, posto, rodoviária) nunca são tratados como cidade: viram ponto de embarque ou são ignorados.
 
 **Como é implementada:** Gemini (`gemini-3.5-flash-lite`) chamado pelo Firebase AI Logic, que guarda a chave da API no Firebase. A resposta é pedida em JSON com formato fixo (saída estruturada) e cada campo é validado pelo app antes de preencher o formulário (ADR-0007).
 
 **Quando a API falha:** se o Gemini estiver fora do ar, demorar mais de 15 segundos ou responder fora do formato esperado, o app avisa o motorista e usa uma extração por regras (reconhece as cidades do catálogo e padrões como "pra Curitiba", "passo por Guarapuava", "18h", "3 vagas", "R$ 90"). Se nem ela reconhecer nada, libera todos os campos para preenchimento manual. A publicação nunca é bloqueada.
 
-**Dados enviados à LLM:** apenas o texto livre digitado pelo motorista (sem e-mail, foto, localização ou qualquer outro dado de identificação do usuário).
+**Dados enviados à LLM:** apenas o texto livre digitado pelo motorista ou pelo passageiro (sem e-mail, foto, localização ou qualquer outro dado de identificação do usuário).
 
 ## 7. Escopo da v1
 
 - Cadastro e login com e-mail verificado (Firebase Auth), login com Google na versão web e foto de perfil.
 - Publicação de viagem via texto livre, com a IA organizando os dados e opção de preenchimento manual.
 - Viagens recorrentes (dias da semana), sem republicar a cada semana.
-- Busca por origem, destino e data, incluindo viagens que passam pelo trajeto do passageiro (paradas intermediárias).
+- Busca por origem, destino e data, incluindo viagens que passam pelo trajeto do passageiro (paradas intermediárias), também em texto livre com a IA (RF-17).
+- Ponto de embarque dentro da cidade de origem, informado pelo motorista (RF-18).
 - Solicitação de vaga pelo passageiro e confirmação ou recusa pelo motorista, com aviso de pedidos pendentes dentro do app.
 - Valor por vaga exibido apenas como informação; pagamento combinado diretamente entre motorista e passageiro.
 - Minhas viagens (como motorista) e minhas reservas (como passageiro).
@@ -83,6 +93,7 @@ Telas previstas: login e cadastro; início e busca de caronas; resultados da bus
 |---|---|
 | Pagamento pelo app | O valor por vaga é só informativo; intermediar pagamentos exige integração financeira e responsabilidade legal fora do alcance do projeto. |
 | Chat interno entre motorista e passageiro | Duplica o WhatsApp, que as pessoas já usam para combinar os detalhes da viagem. |
+| Caronas dentro da mesma cidade (ex.: "do Posto Fênix até a UTFPR") | Comparar lugares dentro da cidade exige mapa com coordenadas e busca por proximidade (Google Maps/Places, que exige plano pago, ou OpenStreetMap), além de mudar o banco e as regras. Fica como trabalho futuro; na v1 o motorista informa o ponto de embarque (RF-18) e a busca prioriza esse ponto. |
 | Rastreamento da viagem em tempo real | Exige localização contínua em segundo plano e infraestrutura extra, sem relação com o problema de encontrar e publicar caronas. |
 | Cálculo de rota otimizada/rateio automático de combustível | O motorista define o valor por vaga; calcular rotas e custos consome tempo desproporcional ao prazo. |
 | Comentários/reviews em texto além da nota | Uma nota rápida é suficiente para construir confiança nesta fase. |

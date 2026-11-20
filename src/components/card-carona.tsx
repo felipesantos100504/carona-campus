@@ -75,6 +75,14 @@ export function CardCarona({ carona, motorista, onPress }: Props) {
               : 'Direta, sem paradas intermediárias'}
           </Text>
         </View>
+        {carona.pontoEmbarque ? (
+          <View style={styles.paradas}>
+            <Ionicons name="flag-outline" size={14} color={cores.verde} />
+            <Text style={styles.textoParadas} numberOfLines={1}>
+              Embarque: {carona.pontoEmbarque}
+            </Text>
+          </View>
+        ) : null}
       </View>
 
       {motorista ? (

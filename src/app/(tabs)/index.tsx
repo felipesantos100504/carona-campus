@@ -8,14 +8,17 @@ import { Botao } from '@/components/botao';
 import { Cabecalho } from '@/components/cabecalho';
 import { CampoCidade } from '@/components/campo-cidade';
 import { CardCaronaCompacto } from '@/components/card-carona';
+import { Campo } from '@/components/campo';
 import { Cartao } from '@/components/cartao';
 import { Chip } from '@/components/chip';
 import { EstadoCarregando, EstadoErro } from '@/components/estados';
+import { Selo } from '@/components/selo';
 import { Tela } from '@/components/tela';
+import { interpretarBusca } from '@/data/ia';
 import { buscarCaronas } from '@/data/repositorio';
 import { useCarregamento } from '@/hooks/use-carregamento';
 import { cores, espaco, sombra, tipografia } from '@/theme';
-import { hojeISO } from '@/utils/formato';
+import { formatarData, hojeISO } from '@/utils/formato';
 
 const SUGESTOES = ['Curitiba', 'Guarapuava', 'Ponta Grossa', 'Francisco Beltrão', 'Cascavel'];
 
@@ -23,6 +26,14 @@ export default function Buscar() {
   const [origem, setOrigem] = useState('');
   const [destino, setDestino] = useState('');
   const [data, setData] = useState('');
+  // Vindos da busca em texto livre: horário aproximado e ponto de embarque.
+  const [horario, setHorario] = useState('');
+  const [ponto, setPonto] = useState('');
+
+  const [pedido, setPedido] = useState('');
+  const [interpretando, setInterpretando] = useState(false);
+  const [avisoIA, setAvisoIA] = useState<{ tipo: 'info' | 'erro'; texto: string } | null>(null);
+
   const proximas = useCarregamento(async () => (await buscarCaronas()).slice(0, 3));
 
   // Calculado a cada renderização para não ficar com a data errada após a meia-noite.
@@ -31,18 +42,62 @@ export default function Buscar() {
     { rotulo: 'Hoje', valor: hojeISO(0) },
     { rotulo: 'Amanhã', valor: hojeISO(1) },
   ];
+  // Data trazida pela IA (ex.: sexta-feira) vira mais uma opção, já marcada.
+  if (data && !opcoesData.some((o) => o.valor === data)) {
+    opcoesData.push({ rotulo: formatarData(`${data}T12:00:00`), valor: data });
+  }
 
   function inverter() {
     setOrigem(destino);
     setDestino(origem);
   }
 
-  function buscar() {
+  function abrirResultados(params: { origem: string; destino: string; data: string; via?: string }) {
     // Passagem de parâmetros para a tela de resultados.
-    router.push({
-      pathname: '/resultados',
-      params: { origem: origem.trim(), destino: destino.trim(), data },
-    });
+    router.push({ pathname: '/resultados', params: { ...params, horario, ponto } });
+  }
+
+  function buscar() {
+    abrirResultados({ origem: origem.trim(), destino: destino.trim(), data });
+  }
+
+  // RF-17: o passageiro descreve o que precisa e a IA preenche a busca.
+  async function buscarComIA() {
+    setInterpretando(true);
+    setAvisoIA(null);
+    try {
+      const b = await interpretarBusca(pedido);
+      const novaOrigem = b.origem ?? origem;
+      const novoDestino = b.destino ?? destino;
+      setOrigem(novaOrigem);
+      setDestino(novoDestino);
+      setData(b.data ?? '');
+      setHorario(b.horario ?? '');
+      setPonto(b.pontoEmbarque ?? '');
+      if (!b.origem && !b.destino) {
+        setAvisoIA({
+          tipo: 'info',
+          texto:
+            'Não identificamos as cidades no seu pedido. Informe a cidade de saída e a de destino abaixo: por enquanto o app atende caronas entre cidades, não dentro da mesma cidade.',
+        });
+        return;
+      }
+      router.push({
+        pathname: '/resultados',
+        params: {
+          origem: novaOrigem.trim(),
+          destino: novoDestino.trim(),
+          data: b.data ?? '',
+          horario: b.horario ?? '',
+          ponto: b.pontoEmbarque ?? '',
+          via: b.fonte,
+        },
+      });
+    } catch (e) {
+      setAvisoIA({ tipo: 'erro', texto: e instanceof Error ? e.message : 'Não foi possível interpretar o pedido.' });
+    } finally {
+      setInterpretando(false);
+    }
   }
 
   function abrirCarona(id: string) {
@@ -56,6 +111,28 @@ export default function Buscar() {
         <Text style={styles.titulo}>Para onde você quer ir?</Text>
         <Text style={styles.subtitulo}>Encontre e compartilhe caronas entre cidades do Paraná.</Text>
       </View>
+
+      <Cartao estilo={styles.cartaoIA}>
+        <Selo rotulo="Busca com IA" icone="sparkles-outline" />
+        <Campo
+          rotulo="Diga para onde você precisa ir"
+          icone="chatbubble-ellipses-outline"
+          placeholder="Ex.: preciso ir pra Cascavel sexta à noite, saindo do Posto Fênix em Quedas do Iguaçu"
+          multiline
+          value={pedido}
+          onChangeText={setPedido}
+        />
+        <Botao
+          titulo="Buscar com IA"
+          icone="sparkles"
+          desabilitado={!pedido.trim()}
+          carregando={interpretando}
+          onPress={buscarComIA}
+        />
+        {avisoIA ? <Aviso tipo={avisoIA.tipo}>{avisoIA.texto}</Aviso> : null}
+      </Cartao>
+
+      <Text style={styles.ou}>ou preencha os campos</Text>
 
       <Cartao>
         <View>
@@ -92,6 +169,13 @@ export default function Buscar() {
             ))}
           </View>
         </View>
+
+        {horario || ponto ? (
+          <View style={styles.extras}>
+            {horario ? <Chip rotulo={`Perto das ${horario}`} icone="close-circle" onPress={() => setHorario('')} /> : null}
+            {ponto ? <Chip rotulo={`Embarque: ${ponto}`} icone="close-circle" onPress={() => setPonto('')} /> : null}
+          </View>
+        ) : null}
 
         <Aviso>Também mostramos viagens que passam pela sua cidade.</Aviso>
         <Botao titulo="Buscar caronas" icone="search" onPress={buscar} />
@@ -147,6 +231,9 @@ const styles = StyleSheet.create({
     ...sombra.cartao,
   },
   bloco: { gap: espaco.sm },
+  cartaoIA: { borderColor: cores.primariaBorda, ...sombra.destaqueIA },
+  ou: { ...tipografia.legenda, color: cores.textoSecundario, textAlign: 'center' },
+  extras: { flexDirection: 'row', flexWrap: 'wrap', gap: espaco.sm },
   linhaRotulo: { flexDirection: 'row', alignItems: 'center', gap: espaco.xs },
   rotulo: { ...tipografia.rotuloP, color: cores.texto },
   linha: { flexDirection: 'row', gap: espaco.sm },

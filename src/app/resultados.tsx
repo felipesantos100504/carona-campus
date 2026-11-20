@@ -15,15 +15,33 @@ import { formatarData } from '@/utils/formato';
 // Tela de referência para listas: mostra os três estados exigidos
 // (carregando, vazio, erro) usando useCarregamento + componentes de estado.
 export default function Resultados() {
-  const { origem = '', destino = '', data = '' } = useLocalSearchParams<{
+  const {
+    origem = '',
+    destino = '',
+    data = '',
+    horario = '',
+    ponto = '',
+    via = '',
+  } = useLocalSearchParams<{
     origem?: string;
     destino?: string;
     data?: string;
+    horario?: string;
+    ponto?: string;
+    /** "ia" ou "regras" quando a busca veio do texto livre do passageiro. */
+    via?: string;
   }>();
 
   const lista = useCarregamento(
-    () => buscarCaronas({ origem: origem || undefined, destino: destino || undefined, data: data || undefined }),
-    [origem, destino, data],
+    () =>
+      buscarCaronas({
+        origem: origem || undefined,
+        destino: destino || undefined,
+        data: data || undefined,
+        horario: horario || undefined,
+        pontoEmbarque: ponto || undefined,
+      }),
+    [origem, destino, data, horario, ponto],
   );
 
   function conteudo() {
@@ -35,7 +53,11 @@ export default function Resultados() {
       return (
         <EstadoVazio
           titulo="Nenhuma carona encontrada"
-          mensagem="Nenhuma viagem passa por essas cidades na data escolhida. Tente outra data."
+          mensagem={
+            horario
+              ? `Nenhuma viagem passa por essas cidades perto das ${horario}. Tente outro horário ou outra data.`
+              : 'Nenhuma viagem passa por essas cidades na data escolhida. Tente outra data.'
+          }
           acao={{ titulo: 'Alterar busca', icone: 'calendar-outline', onPress: () => router.back() }}
         />
       );
@@ -53,33 +75,48 @@ export default function Resultados() {
         keyExtractor={(item) => item.carona.id}
         contentContainerStyle={styles.lista}
         ListHeaderComponent={
-          <View style={styles.resumo}>
-            <View style={styles.resumoTextos}>
-              <View style={styles.trajeto}>
-                <View style={styles.ponto} />
-                <Text style={styles.cidades} numberOfLines={1}>
-                  {origem || 'Qualquer origem'} → {destino || 'qualquer destino'}
-                </Text>
+          <View style={styles.cabecalho}>
+            {via ? (
+              <Aviso tipo={via === 'ia' ? 'sucesso' : 'info'} icone="sparkles-outline">
+                {via === 'ia'
+                  ? 'Busca interpretada pela IA. Toque no lápis para ajustar.'
+                  : 'IA indisponível: a busca foi montada pelas regras do app. Confira as cidades.'}
+              </Aviso>
+            ) : null}
+            <View style={styles.resumo}>
+              <View style={styles.resumoTextos}>
+                <View style={styles.trajeto}>
+                  <View style={styles.ponto} />
+                  <Text style={styles.cidades} numberOfLines={1}>
+                    {origem || 'Qualquer origem'} → {destino || 'qualquer destino'}
+                  </Text>
+                </View>
+                <View style={styles.linha}>
+                  <Ionicons name="calendar-outline" size={14} color={cores.textoSecundario} />
+                  <Text style={styles.data}>
+                    {data ? formatarData(`${data}T12:00:00`) : 'Qualquer dia'}
+                    {horario ? ` · perto das ${horario}` : ''}
+                  </Text>
+                  {pronto ? (
+                    <Selo
+                      rotulo={`${quantidade} ${quantidade === 1 ? 'carona disponível' : 'caronas disponíveis'}`}
+                      icone="car-outline"
+                      tom="verde"
+                    />
+                  ) : null}
+                </View>
               </View>
-              <View style={styles.linha}>
-                <Ionicons name="calendar-outline" size={14} color={cores.textoSecundario} />
-                <Text style={styles.data}>{data ? formatarData(`${data}T12:00:00`) : 'Qualquer dia'}</Text>
-                {pronto ? (
-                  <Selo
-                    rotulo={`${quantidade} ${quantidade === 1 ? 'carona disponível' : 'caronas disponíveis'}`}
-                    icone="car-outline"
-                    tom="verde"
-                  />
-                ) : null}
-              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Alterar busca"
+                onPress={() => router.back()}
+                style={styles.editar}>
+                <Ionicons name="pencil" size={18} color={cores.primaria} />
+              </Pressable>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Alterar busca"
-              onPress={() => router.back()}
-              style={styles.editar}>
-              <Ionicons name="pencil" size={18} color={cores.primaria} />
-            </Pressable>
+            {ponto ? (
+              <Aviso icone="flag-outline">Caronas que saem de &quot;{ponto}&quot; aparecem primeiro.</Aviso>
+            ) : null}
           </View>
         }
         ListEmptyComponent={conteudo()}
@@ -103,6 +140,7 @@ export default function Resultados() {
 const styles = StyleSheet.create({
   raiz: { flex: 1, backgroundColor: cores.fundo },
   lista: { padding: espaco.md, gap: espaco.md, flexGrow: 1 },
+  cabecalho: { gap: espaco.md },
   resumo: {
     flexDirection: 'row',
     alignItems: 'center',

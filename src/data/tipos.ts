@@ -25,6 +25,8 @@ export type Carona = {
   destino: string;
   /** Cidades por onde o motorista passa, na ordem do trajeto. */
   paradas: string[];
+  /** Local de embarque dentro da cidade de origem (ex.: "Posto Fênix"). */
+  pontoEmbarque?: string;
   /** Próxima saída (ISO). Nas viagens recorrentes é calculada a partir da primeira saída. */
   dataHora: string;
   /** Primeira saída cadastrada pelo motorista (ISO). */
@@ -66,6 +68,10 @@ export type FiltroBusca = {
   destino?: string;
   /** Data no formato AAAA-MM-DD. */
   data?: string;
+  /** Horário aproximado (HH:MM): mostra saídas até 1h30 antes ou depois. */
+  horario?: string;
+  /** Onde o passageiro quer embarcar: caronas com esse ponto aparecem primeiro. */
+  pontoEmbarque?: string;
 };
 
 export type CaronaComMotorista = { carona: Carona; motorista: Usuario };

@@ -133,7 +133,7 @@ export default function DetalhesCarona() {
   }
 
   function legendaParada(i: number) {
-    if (i === 0) return 'Ponto de partida';
+    if (i === 0) return carona.pontoEmbarque ? `Embarque: ${carona.pontoEmbarque}` : 'Ponto de partida';
     if (i === trajeto.length - 1) return 'Destino final';
     return 'Parada intermediária';
   }

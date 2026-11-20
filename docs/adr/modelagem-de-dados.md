@@ -294,6 +294,10 @@ Negativas assumidas: o plano B reconhece só as cidades do catálogo e padrões 
 
 Difícil de mudar depois: trocar de provedor de IA exige reescrever `src/data/ia.ts`, mas o formato `ViagemExtraida` usado pela tela de publicação continua o mesmo.
 
+### Revisão (2026-11-20): IA também na busca do passageiro
+
+A mesma integração passou a interpretar o pedido do passageiro (RF-17), com outro formato de resposta (origem, destino, data, horário e ponto de embarque) e o mesmo plano B por regras. A IA só preenche os campos: a compatibilidade continua sendo feita por regras programadas (RNF-06), agora com uma janela de 1h30 em volta do horário pedido. Lugares dentro da cidade nunca viram origem ou destino; viram ponto de embarque (RF-18), porque a busca compara cidades.
+
 ### Revisão (2026-11-19): chamada direta à Gemini API com chave do AI Studio
 
 O Firebase AI Logic foi ativado no console (Firebase AI Logic API e Gemini API ativas), mas a configuração do provedor não foi criada: toda chamada respondia "Firebase AI Logic genai config not found", mesmo quatro dias depois, e o console não oferece como recriá-la. O App Check foi descartado como causa (a exigência para o AI Logic só começa em 21/01/2027).
@@ -353,7 +357,7 @@ Com o Firestore, era preciso implementar o fluxo pedido → confirmação (RF-07
 - **Busca sem índice composto:** cada carona grava `validaAte` (a data da viagem única, ou uma data distante para as recorrentes) e o `trajeto` normalizado. A busca consulta `validaAte >= agora` e aplica os filtros de trajeto, parada e data no app, por regras programadas (RNF-06).
 - **Avaliações:** a média e o total de notas são calculados a partir das notas recebidas (`avaliacoes` onde `avaliadoId` é a pessoa), em vez de gravar a média no perfil de outra pessoa. A agregação `average()` no servidor foi testada, mas exige um índice composto no banco real; com poucas notas por pessoa, calcular no app evita esse índice. O total de caronas oferecidas usa `count()` no servidor.
 - **Avisos no app:** em vez de notificação push, a aba Viagens mostra em tempo real (`onSnapshot`) o número de pedidos aguardando o motorista, e o passageiro vê a situação do pedido na reserva.
-- **Testes:** as regras são testadas no emulador do Firestore (`npm run test:regras`, 25 casos).
+- **Testes:** as regras são testadas no emulador do Firestore (`npm run test:regras`, 26 casos).
 
 ### Alternativas consideradas
 

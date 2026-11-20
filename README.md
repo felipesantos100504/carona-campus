@@ -51,7 +51,7 @@ Com o servidor rodando:
 - **Navegador:** pressione `w` no terminal ou rode `npm run web`. O login com Google só aparece nesta versão.
 - **Emulador Android:** pressione `a` (requer Android Studio com um emulador configurado).
 
-Para usar o app, crie uma conta e confirme o e-mail (ou entre com Google na versão web). Depois que os dados de exemplo forem cadastrados com `npm run popular`, também dá para entrar com as **contas de demonstração** listadas em [`scripts/dados-exemplo.mjs`](scripts/dados-exemplo.mjs) (a senha está nesse arquivo). O passo a passo de uso está no [tutorial](docs/tutorial.md).
+Para usar o app, crie uma conta e confirme o e-mail (ou entre com Google na versão web). Depois que os dados de exemplo forem cadastrados com `npm run popular`, também dá para entrar com as **contas de demonstração** listadas em [`scripts/dados-exemplo.mjs`](scripts/dados-exemplo.mjs) (a senha está nesse arquivo). As principais são `motorista@carona-campus.test` (Rafael, com caronas saindo de Quedas do Iguaçu e um pedido de vaga esperando resposta) e `passageiro@carona-campus.test` (Júlia, com esse pedido e uma viagem já realizada para avaliar). O passo a passo de uso está no [tutorial](docs/tutorial.md).
 
 Antes de subir alterações, rode `npm run lint` e `npm run typecheck`.
 
@@ -87,7 +87,7 @@ Os valores do Firebase **não são segredos**: eles identificam o projeto, e que
 
 | Comando | O que faz |
 |---|---|
-| `npm run test:regras` | Testa as regras do Firestore no emulador local (25 casos; precisa de Java) |
+| `npm run test:regras` | Testa as regras do Firestore no emulador local (26 casos; precisa de Java) |
 | `npm run emuladores` | Sobe os emuladores de Auth e Firestore para testar o app sem tocar no banco real |
 | `npm run popular` | Cadastra as contas de demonstração e os dados de exemplo no Firebase |
 | `npm run exportar` | Gera [`docs/estrutura-firestore.json`](docs/estrutura-firestore.json) a partir dos dados do Firestore |
@@ -99,7 +99,8 @@ Os valores do Firebase **não são segredos**: eles identificam o projeto, e que
 - **Banco de dados:** Cloud Firestore com as coleções `usuarios`, `caronas`, `reservas` e `avaliacoes` (estrutura em [`docs/estrutura-firestore.json`](docs/estrutura-firestore.json)).
 - **Autenticação:** cadastro com confirmação de e-mail, login com e-mail e senha (e com Google na web) e recuperação de senha. As telas privadas só abrem com login e e-mail verificado (`Stack.Protected`).
 - **Regras de acesso:** [`firestore.rules`](firestore.rules). Ninguém lê nem grava sem e-mail verificado, cada pessoa altera só os próprios dados, e o contador de vagas só muda junto com a reserva (disputa pela última vaga, RNF-05).
-- **IA:** a publicação em texto livre usa o Gemini. Se a API falhar ou responder fora do formato, o app usa uma extração por regras e libera o preenchimento manual.
+- **IA:** o Gemini interpreta texto livre na **publicação** (motorista) e na **busca** (passageiro: "preciso ir pra Cascavel sexta à noite, saindo do Posto Fênix"). Se a API falhar ou responder fora do formato, o app usa uma extração por regras e libera o preenchimento manual.
+- **Ponto de embarque:** o motorista informa onde os passageiros embarcam na cidade de origem; na busca, as caronas que saem do ponto pedido aparecem primeiro.
 - **Fluxo de vagas:** o passageiro pede, o motorista aceita ou recusa (com aviso de pedidos pendentes na aba Viagens), e o passageiro pode cancelar. Depois da viagem, motorista e passageiro se avaliam.
 - **Sem conexão:** ações mostram aviso de falta de internet, e a aba Viagens mostra os dados salvos no aparelho. A aba Perfil tem um "Modo demonstração" que simula a falta de conexão.
 

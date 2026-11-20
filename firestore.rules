@@ -72,6 +72,7 @@ service cloud.firestore {
         && d.vagasTotais is int && d.vagasTotais >= 1 && d.vagasTotais <= 8
         && d.vagasDisponiveis is int && d.vagasDisponiveis >= 0 && d.vagasDisponiveis <= d.vagasTotais
         && d.valorPorVaga is number && d.valorPorVaga >= 0 && d.valorPorVaga < 10000
+        && textoOpcional(d, 'pontoEmbarque', 120)
         && textoOpcional(d, 'observacoes', 500)
         && textoOpcional(d, 'textoOriginal', 1000);
     }

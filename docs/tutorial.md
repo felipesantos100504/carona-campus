@@ -18,6 +18,13 @@ Nas próximas vezes, entre pela aba **Entrar** com e-mail e senha. A sessão fic
 
 ## 2. Buscar uma carona (passageiro)
 
+**Do jeito mais rápido, com IA:** na aba **Buscar**, escreva no quadro "Diga para onde você precisa ir" o que você precisa, por exemplo:
+> preciso ir pra Cascavel sexta à noite, saindo do Posto Fênix em Quedas do Iguaçu
+
+Toque em **Buscar com IA**. O app entende as cidades, o dia, o horário aproximado e o ponto de embarque e já mostra as caronas que saem até 1h30 antes ou depois desse horário, com as que saem do seu ponto em primeiro lugar. Se o pedido não tiver cidades (ex.: "da UTFPR até o posto"), o app avisa: por enquanto ele atende caronas entre cidades.
+
+**Ou pelos campos:**
+
 1. Na aba **Buscar**, informe a cidade de saída e a de destino. As sugestões de cidades aparecem enquanto você digita.
 2. Escolha a data (**Qualquer dia**, **Hoje** ou **Amanhã**) e toque em **Buscar caronas**.
 3. A lista mostra também as viagens que **passam** pelas suas cidades. Exemplo: buscando "Guarapuava → Curitiba", aparece a viagem "Pato Branco → Curitiba" que passa por Guarapuava.
@@ -40,7 +47,7 @@ O valor por vaga é apenas informativo: o pagamento é combinado diretamente com
 1. Na aba **Publicar**, escreva a viagem como numa mensagem de WhatsApp. Exemplo:
    > saio de Pato Branco toda sexta às 18h pra Curitiba, passo por Guarapuava e Ponta Grossa, 3 vagas, R$ 90
 2. Toque em **Interpretar com IA**. O Gemini organiza origem, destino, paradas, data, horário, vagas, valor e os dias da semana (se a viagem se repete).
-3. Confira os campos e corrija o que precisar. Dá para remover ou adicionar paradas e ligar **Repetir toda semana**.
+3. Confira os campos e corrija o que precisar. Dá para remover ou adicionar paradas, informar o **ponto de embarque** (ex.: "Posto Fênix", "rodoviária") e ligar **Repetir toda semana**.
 4. Toque em **Publicar carona**. O app abre os detalhes da carona publicada.
 
 Se a IA estiver fora do ar ou responder fora do formato esperado, o app avisa e preenche o que conseguir reconhecer por regras. Se nada for reconhecido, todos os campos ficam liberados para preenchimento manual. A publicação nunca é bloqueada.

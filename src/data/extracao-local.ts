@@ -53,6 +53,7 @@ export function extrairViagemLocal(texto: string): Omit<ViagemExtraida, 'fonte'>
     origem,
     destino,
     paradas,
+    pontoEmbarque: extrairPontoEmbarque(texto),
     horario: extrairHorario(t),
     vagas: extrairVagas(t),
     valorPorVaga: extrairValor(t),
@@ -61,6 +62,24 @@ export function extrairViagemLocal(texto: string): Omit<ViagemExtraida, 'fonte'>
 
   if (!resultado.origem && !resultado.destino && !resultado.horario) return null;
   return resultado;
+}
+
+/**
+ * "saindo do posto Fênix", "embarque na rodoviária": local dentro da cidade.
+ * Usa o texto original para manter maiúsculas e acentos como a pessoa escreveu.
+ */
+function extrairPontoEmbarque(original: string) {
+  const m = original.match(
+    /\b(?:saio|saindo|embarque|embarco|pego|pegar)\s+(?:d[oa]s?|n[oa]s?|em|perto d[oa]|na frente d[oa])\s+([^,.;!?]+)/i,
+  );
+  if (!m) return undefined;
+  const ponto = m[1]
+    .split(/\s+(?:em|às|as|para|pra|até|ate|hoje|amanhã|amanha|toda|todo|todos|de manhã|à noite|a noite)\b/i)[0]
+    .trim();
+  const n = normalizar(ponto);
+  // "saio de Pato Branco" é a cidade de origem, não um ponto de embarque.
+  if (!ponto || CIDADES.some((c) => n.includes(normalizar(c))) || APELIDOS[n]) return undefined;
+  return ponto;
 }
 
 function extrairHorario(t: string) {

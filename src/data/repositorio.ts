@@ -170,6 +170,7 @@ function paraCarona(id: string, d: DocumentData, data?: string): Carona | null {
     origem: d.origem,
     destino: d.destino,
     paradas: d.paradas ?? [],
+    pontoEmbarque: d.pontoEmbarque,
     dataHora,
     primeiraSaida: d.primeiraSaida,
     vagasTotais: d.vagasTotais,
@@ -206,6 +207,20 @@ export function podeAvaliar(reserva: Reserva, carona: Carona) {
     new Date(carona.primeiraSaida).getTime() < Date.now() &&
     !reserva.avaliacao
   );
+}
+
+const JANELA_HORARIO_MIN = 90;
+
+/** A saída está a até 1h30 do horário pedido (HH:MM), no mesmo dia. */
+function pertoDoHorario(iso: string, horario: string) {
+  const d = new Date(iso);
+  const [h, m] = horario.split(':').map(Number);
+  return Math.abs(d.getHours() * 60 + d.getMinutes() - (h * 60 + m)) <= JANELA_HORARIO_MIN;
+}
+
+/** "posto fenix" e "posto fenix do centro" contam como o mesmo ponto. */
+function mesmoPonto(a: string, b: string) {
+  return a.includes(b) || b.includes(a);
 }
 
 /** A carona serve se passa pela origem e depois pelo destino buscados. */
@@ -328,7 +343,12 @@ export function buscarCaronas(filtro: FiltroBusca = {}): Promise<CaronaComMotori
       .filter((c) => new Date(c.dataHora).getTime() >= Date.now() - 60 * 60 * 1000)
       .filter((c) => c.motoristaId !== uid)
       .filter((c) => atendeTrajeto(c, filtro.origem, filtro.destino))
+      .filter((c) => !filtro.horario || pertoDoHorario(c.dataHora, filtro.horario))
       .sort((a, b) => a.dataHora.localeCompare(b.dataHora));
+    // Caronas que saem do ponto de embarque pedido aparecem primeiro.
+    const ponto = filtro.pontoEmbarque ? normalizar(filtro.pontoEmbarque) : '';
+    const noPonto = (c: Carona) => !!ponto && !!c.pontoEmbarque && mesmoPonto(normalizar(c.pontoEmbarque), ponto);
+    caronas.sort((a, b) => Number(noPonto(b)) - Number(noPonto(a)));
     return anexarMotoristas(caronas);
   });
 }
@@ -351,6 +371,7 @@ export function publicarCarona(dados: NovaCarona): Promise<Carona> {
       origem: dados.origem,
       destino: dados.destino,
       paradas: dados.paradas,
+      pontoEmbarque: dados.pontoEmbarque?.trim() || undefined,
       // Trajeto normalizado (sem acento, minúsculo) para a busca por paradas.
       trajeto: [dados.origem, ...dados.paradas, dados.destino].map(normalizar),
       primeiraSaida: dados.dataHora,
