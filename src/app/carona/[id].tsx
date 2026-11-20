@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -11,18 +11,34 @@ import { Cartao } from '@/components/cartao';
 import { EstadoCarregando, EstadoErro, EstadoVazio } from '@/components/estados';
 import { Selo } from '@/components/selo';
 import { Tela } from '@/components/tela';
-import { cancelarReserva, obterCarona, obterMinhaReserva, solicitarVaga } from '@/data/repositorio';
-import { ID_USUARIO_ATUAL } from '@/data/seed';
+import { auth } from '@/data/firebase';
+import {
+  cancelarReserva,
+  listarSolicitacoes,
+  obterCarona,
+  obterMinhaReserva,
+  podeAvaliar,
+  responderSolicitacao,
+  solicitarVaga,
+} from '@/data/repositorio';
+import { Reserva, Solicitacao } from '@/data/tipos';
 import { useCarregamento } from '@/hooks/use-carregamento';
 import { cores, espaco, tipografia } from '@/theme';
-import { formatarDataExtensa, formatarDiasSemana, formatarHora, formatarMoeda } from '@/utils/formato';
+import { formatarDataExtensa, formatarDiasSemana, formatarHora, formatarMoeda, jaPassou } from '@/utils/formato';
 
 export default function DetalhesCarona() {
   // Parâmetro recebido da lista: /carona/c1
   const { id } = useLocalSearchParams<{ id: string }>();
   const detalhe = useCarregamento(async () => {
-    const [resultado, reserva] = await Promise.all([obterCarona(id), obterMinhaReserva(id)]);
-    return resultado ? { ...resultado, reserva } : null;
+    const resultado = await obterCarona(id);
+    if (!resultado) return null;
+    // O motorista vê os pedidos de vaga; o passageiro vê a própria reserva.
+    const minha = resultado.carona.motoristaId === auth.currentUser?.uid;
+    const [reserva, solicitacoes] = await Promise.all([
+      minha ? null : obterMinhaReserva(id),
+      minha ? listarSolicitacoes(id) : ([] as Solicitacao[]),
+    ]);
+    return { ...resultado, reserva, solicitacoes, minha };
   }, [id]);
 
   const [enviando, setEnviando] = useState(false);
@@ -50,11 +66,10 @@ export default function DetalhesCarona() {
     );
   }
 
-  const { carona, motorista, reserva } = detalhe.dados;
+  const { carona, motorista, reserva, solicitacoes, minha: minhaCarona } = detalhe.dados;
   const trajeto = [carona.origem, ...carona.paradas, carona.destino];
   const lotada = carona.vagasDisponiveis <= 0;
-  const viagemPassada = new Date(carona.dataHora).getTime() < Date.now();
-  const minhaCarona = carona.motoristaId === ID_USUARIO_ATUAL;
+  const viagemPassada = jaPassou(carona.dataHora);
 
   async function executar(acao: () => Promise<unknown>, sucesso: string) {
     setEnviando(true);
@@ -70,23 +85,44 @@ export default function DetalhesCarona() {
     }
   }
 
-  const rodape = viagemPassada || minhaCarona ? null : reserva ? (
-    <Botao
-      titulo="Cancelar minha vaga"
-      variante="perigo"
-      icone="close-circle-outline"
-      carregando={enviando}
-      onPress={() => executar(() => cancelarReserva(reserva.id), 'Sua vaga foi cancelada.')}
-    />
-  ) : (
-    <Botao
-      titulo={lotada ? 'Carona lotada' : 'Solicitar vaga'}
-      icone="person-add-outline"
-      desabilitado={lotada}
-      carregando={enviando}
-      onPress={() => executar(() => solicitarVaga(carona.id), 'Vaga reservada! Combine o pagamento com o motorista.')}
-    />
-  );
+  function rodapePassageiro() {
+    if (minhaCarona) return null;
+    if (reserva && podeAvaliar(reserva, carona)) {
+      return (
+        <Botao
+          titulo="Avaliar motorista"
+          icone="star"
+          variante="verde"
+          onPress={() => router.push({ pathname: '/avaliar/[reservaId]', params: { reservaId: reserva.id } })}
+        />
+      );
+    }
+    if (viagemPassada && !carona.recorrencia) return null;
+    if (reserva?.status === 'pendente' || reserva?.status === 'confirmada') {
+      const pendente = reserva.status === 'pendente';
+      return (
+        <Botao
+          titulo={pendente ? 'Cancelar pedido' : 'Cancelar minha vaga'}
+          variante="perigo"
+          icone="close-circle-outline"
+          carregando={enviando}
+          onPress={() =>
+            executar(() => cancelarReserva(reserva.id), pendente ? 'Seu pedido foi cancelado.' : 'Sua vaga foi cancelada.')
+          }
+        />
+      );
+    }
+    if (reserva?.status === 'recusada') return null;
+    return (
+      <Botao
+        titulo={lotada ? 'Carona lotada' : 'Solicitar vaga'}
+        icone="person-add-outline"
+        desabilitado={lotada}
+        carregando={enviando}
+        onPress={() => executar(() => solicitarVaga(carona.id), 'Pedido enviado! O motorista vai confirmar sua vaga.')}
+      />
+    );
+  }
 
   function legendaParada(i: number) {
     if (i === 0) return 'Ponto de partida';
@@ -95,7 +131,7 @@ export default function DetalhesCarona() {
   }
 
   return (
-    <Tela bordas={['bottom']} rodape={rodape}>
+    <Tela bordas={['bottom']} rodape={rodapePassageiro()}>
       <View style={styles.topo}>
         {carona.recorrencia ? (
           <Selo rotulo={`Toda semana: ${formatarDiasSemana(carona.recorrencia.diasSemana)}`} icone="repeat" />
@@ -106,9 +142,23 @@ export default function DetalhesCarona() {
       {mensagem ? (
         <Aviso tipo={mensagem.tipo === 'ok' ? 'sucesso' : 'erro'}>{mensagem.texto}</Aviso>
       ) : reserva ? (
-        <Aviso tipo="sucesso">Você tem uma vaga nesta carona.</Aviso>
+        <AvisoReserva reserva={reserva} />
       ) : minhaCarona ? (
         <Aviso icone="car-outline">Esta é uma carona publicada por você.</Aviso>
+      ) : null}
+
+      {minhaCarona ? (
+        <PedidosDeVaga
+          solicitacoes={solicitacoes}
+          viagemAconteceu={jaPassou(carona.primeiraSaida)}
+          enviando={enviando}
+          responder={(s, aceitar) =>
+            executar(
+              () => responderSolicitacao(s.reserva.id, aceitar),
+              aceitar ? `Vaga confirmada para ${s.passageiro.nome}.` : 'Pedido recusado.',
+            )
+          }
+        />
       ) : null}
 
       <Cartao titulo="Itinerário planejado" icone="map-outline">
@@ -181,7 +231,84 @@ export default function DetalhesCarona() {
   );
 }
 
+function AvisoReserva({ reserva }: { reserva: Reserva }) {
+  switch (reserva.status) {
+    case 'pendente':
+      return <Aviso icone="time-outline">Pedido enviado. Aguardando o motorista confirmar sua vaga.</Aviso>;
+    case 'confirmada':
+      return <Aviso tipo="sucesso">Sua vaga está confirmada. Combine os detalhes com o motorista.</Aviso>;
+    case 'concluida':
+      return <Aviso tipo="sucesso">Você viajou nesta carona.</Aviso>;
+    case 'recusada':
+      return (
+        <Aviso tipo="erro">
+          {reserva.motivo === 'lotada'
+            ? 'A vaga não está mais disponível: a carona lotou antes de o seu pedido ser aceito.'
+            : 'O motorista não aceitou seu pedido nesta carona.'}
+        </Aviso>
+      );
+    default:
+      return null;
+  }
+}
+
+type PropsPedidos = {
+  solicitacoes: Solicitacao[];
+  viagemAconteceu: boolean;
+  enviando: boolean;
+  responder: (s: Solicitacao, aceitar: boolean) => void;
+};
+
+/** RF-08: o motorista confirma ou recusa cada pedido de vaga. */
+function PedidosDeVaga({ solicitacoes, viagemAconteceu, enviando, responder }: PropsPedidos) {
+  return (
+    <Cartao titulo="Pedidos de vaga" icone="people-outline">
+      {solicitacoes.length === 0 ? (
+        <Text style={styles.legenda}>Nenhum pedido ainda. Eles aparecem aqui assim que alguém solicitar uma vaga.</Text>
+      ) : null}
+      {solicitacoes.map((s) => {
+        const pendente = s.reserva.status === 'pendente';
+        const avaliavel = !pendente && viagemAconteceu && !s.reserva.avaliacao;
+        return (
+          <View key={s.reserva.id} style={styles.pedido}>
+            <View style={styles.motorista}>
+              <Avatar nome={s.passageiro.nome} fotoUri={s.passageiro.fotoUri} tamanho={40} />
+              <View style={styles.dadosMotorista}>
+                <Text style={styles.nomePedido}>{s.passageiro.nome}</Text>
+                <Text style={styles.legenda}>
+                  {s.passageiro.totalAvaliacoes > 0
+                    ? `${s.passageiro.avaliacaoMedia.toFixed(1)} ★ · ${s.passageiro.totalAvaliacoes} avaliações`
+                    : 'Sem avaliações ainda'}
+                </Text>
+              </View>
+              <Selo rotulo={pendente ? 'Aguardando você' : 'Confirmado'} tom={pendente ? 'aviso' : 'verdeForte'} />
+            </View>
+            {pendente ? (
+              <View style={styles.acoes}>
+                <Botao titulo="Recusar" variante="contorno" pequeno desabilitado={enviando} onPress={() => responder(s, false)} estilo={styles.flex} />
+                <Botao titulo="Aceitar" icone="checkmark" variante="verde" pequeno desabilitado={enviando} onPress={() => responder(s, true)} estilo={styles.flex} />
+              </View>
+            ) : avaliavel ? (
+              <Botao
+                titulo="Avaliar passageiro"
+                icone="star-outline"
+                variante="suave"
+                pequeno
+                onPress={() => router.push({ pathname: '/avaliar/[reservaId]', params: { reservaId: s.reserva.id } })}
+              />
+            ) : null}
+          </View>
+        );
+      })}
+    </Cartao>
+  );
+}
+
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  pedido: { gap: espaco.sm, paddingVertical: espaco.sm, borderTopWidth: 1, borderTopColor: cores.borda },
+  nomePedido: { ...tipografia.rotulo, color: cores.texto },
+  acoes: { flexDirection: 'row', gap: espaco.sm },
   topo: { gap: espaco.sm, paddingTop: espaco.sm },
   quando: { ...tipografia.tituloG, color: cores.texto },
   parada: { flexDirection: 'row', gap: espaco.md },

@@ -54,3 +54,8 @@ export function hojeISO(somarDias = 0) {
   d.setDate(d.getDate() + somarDias);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
+
+/** Indica se a data/hora (ISO) já ficou para trás. */
+export function jaPassou(iso: string) {
+  return new Date(iso).getTime() < Date.now();
+}

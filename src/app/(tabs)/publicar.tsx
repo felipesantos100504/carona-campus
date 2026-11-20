@@ -26,6 +26,7 @@ export default function Publicar() {
   const [interpretando, setInterpretando] = useState(false);
   const [mostrarCampos, setMostrarCampos] = useState(false);
   const [erroIA, setErroIA] = useState<string | null>(null);
+  const [fonte, setFonte] = useState<'ia' | 'regras' | null>(null);
 
   const [origem, setOrigem] = useState('');
   const [destino, setDestino] = useState('');
@@ -41,7 +42,8 @@ export default function Publicar() {
   const [publicando, setPublicando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  function preencher(viagem: ViagemExtraida) {
+  function preencher(viagem: Partial<ViagemExtraida> & { paradas: string[] }) {
+    setFonte(viagem.fonte ?? null);
     setOrigem(viagem.origem ?? '');
     setDestino(viagem.destino ?? '');
     setParadas(viagem.paradas);
@@ -163,8 +165,13 @@ export default function Publicar() {
           {erroIA}
         </Aviso>
       ) : null}
-      {mostrarCampos && !erroIA ? (
+      {mostrarCampos && !erroIA && fonte === 'ia' ? (
         <Aviso tipo="sucesso">Dados identificados pela IA. Confira e corrija antes de publicar.</Aviso>
+      ) : null}
+      {mostrarCampos && !erroIA && fonte === 'regras' ? (
+        <Aviso titulo="IA indisponível no momento" icone="construct-outline">
+          Preenchemos o que conseguimos reconhecer no texto. Confira e complete os campos antes de publicar.
+        </Aviso>
       ) : null}
 
       {mostrarCampos ? (

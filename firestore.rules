@@ -1,0 +1,190 @@
+rules_version = '2';
+
+// Regras de acesso do Carona Campus.
+// Publicar: Console do Firebase > Firestore Database > Regras (colar e "Publicar")
+// ou, com a Firebase CLI: firebase deploy --only firestore:rules
+//
+// Princípios:
+// - Ninguém lê nem grava nada sem login e e-mail verificado (RNF-02).
+// - Cada pessoa só altera o próprio perfil e as próprias caronas.
+// - Reservas e avaliações têm id previsível ({caronaId}_{passageiroId} e
+//   {reservaId}_{autorId}), o que impede pedidos e notas duplicados.
+// - O contador de vagas só muda junto com a reserva correspondente (RNF-05).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- funções auxiliares ----------
+
+    function verificado() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function novo() {
+      return request.resource.data;
+    }
+
+    function texto(valor, maximo) {
+      return valor is string && valor.size() > 0 && valor.size() <= maximo;
+    }
+
+    function textoOpcional(dados, campo, maximo) {
+      return !(campo in dados) || dados[campo] == null || (dados[campo] is string && dados[campo].size() <= maximo);
+    }
+
+    function caminhoCarona(caronaId) {
+      return /databases/$(database)/documents/caronas/$(caronaId);
+    }
+
+    function caminhoReserva(reservaId) {
+      return /databases/$(database)/documents/reservas/$(reservaId);
+    }
+
+    // ---------- usuarios/{uid}: perfil público ----------
+
+    function perfilValido(d) {
+      return texto(d.nome, 80)
+        && d.cidade is string && d.cidade.size() <= 80
+        && textoOpcional(d, 'bio', 500)
+        // Foto pequena em base64 (até ~220 KB) ou URL da conta Google.
+        && textoOpcional(d, 'fotoUri', 300000);
+    }
+
+    match /usuarios/{uid} {
+      allow read: if verificado();
+      allow create: if verificado() && request.auth.uid == uid
+        && novo().keys().hasOnly(['nome', 'cidade', 'bio', 'fotoUri', 'membroDesde'])
+        && perfilValido(novo());
+      allow update: if verificado() && request.auth.uid == uid
+        && novo().diff(resource.data).affectedKeys().hasOnly(['nome', 'cidade', 'bio', 'fotoUri'])
+        && perfilValido(novo());
+      allow delete: if false;
+    }
+
+    // ---------- caronas/{caronaId}: viagens publicadas ----------
+
+    function caronaValida(d) {
+      return texto(d.origem, 80)
+        && texto(d.destino, 80)
+        && d.paradas is list && d.paradas.size() <= 10
+        && d.trajeto is list && d.trajeto.size() == d.paradas.size() + 2
+        && texto(d.primeiraSaida, 40)
+        && texto(d.validaAte, 40)
+        && d.vagasTotais is int && d.vagasTotais >= 1 && d.vagasTotais <= 8
+        && d.vagasDisponiveis is int && d.vagasDisponiveis >= 0 && d.vagasDisponiveis <= d.vagasTotais
+        && d.valorPorVaga is number && d.valorPorVaga >= 0 && d.valorPorVaga < 10000
+        && textoOpcional(d, 'observacoes', 500)
+        && textoOpcional(d, 'textoOriginal', 1000);
+    }
+
+    // O passageiro só devolve uma vaga quando cancela, na mesma operação,
+    // uma reserva que estava confirmada.
+    function cancelouVagaConfirmada(caronaId) {
+      let reserva = caminhoReserva(caronaId + '_' + request.auth.uid);
+      return exists(reserva)
+        && get(reserva).data.status == 'confirmada'
+        && getAfter(reserva).data.status == 'cancelada';
+    }
+
+    match /caronas/{caronaId} {
+      allow read: if verificado();
+
+      allow create: if verificado()
+        && novo().motoristaId == request.auth.uid
+        && novo().vagasDisponiveis == novo().vagasTotais
+        && caronaValida(novo());
+
+      // Motorista: edita a própria carona (inclusive o contador de vagas ao aceitar pedidos).
+      allow update: if verificado()
+        && resource.data.motoristaId == request.auth.uid
+        && novo().motoristaId == resource.data.motoristaId
+        && caronaValida(novo());
+
+      // Passageiro: devolve exatamente uma vaga ao cancelar a vaga confirmada (RF-12).
+      allow update: if verificado()
+        && resource.data.motoristaId != request.auth.uid
+        && novo().diff(resource.data).affectedKeys().hasOnly(['vagasDisponiveis'])
+        && novo().vagasDisponiveis == resource.data.vagasDisponiveis + 1
+        && novo().vagasDisponiveis <= resource.data.vagasTotais
+        && cancelouVagaConfirmada(caronaId);
+
+      allow delete: if verificado() && resource.data.motoristaId == request.auth.uid;
+    }
+
+    // ---------- reservas/{caronaId}_{passageiroId}: pedidos de vaga ----------
+
+    function participante() {
+      return request.auth.uid == resource.data.passageiroId || request.auth.uid == resource.data.motoristaId;
+    }
+
+    function mesmasPartes() {
+      return novo().caronaId == resource.data.caronaId
+        && novo().passageiroId == resource.data.passageiroId
+        && novo().motoristaId == resource.data.motoristaId;
+    }
+
+    // Ao confirmar, a carona perde exatamente uma vaga na mesma transação (RF-15 / RNF-05).
+    function descontouUmaVaga() {
+      let carona = caminhoCarona(novo().caronaId);
+      return getAfter(carona).data.vagasDisponiveis == get(carona).data.vagasDisponiveis - 1;
+    }
+
+    match /reservas/{reservaId} {
+      // "resource == null" permite consultar a própria reserva antes de ela existir.
+      allow get: if verificado() && (resource == null || participante());
+      allow list: if verificado() && participante();
+
+      // Passageiro pede vaga (RF-07).
+      allow create: if verificado()
+        && reservaId == novo().caronaId + '_' + request.auth.uid
+        && novo().passageiroId == request.auth.uid
+        && novo().status == 'pendente'
+        && novo().keys().hasOnly(['caronaId', 'passageiroId', 'motoristaId', 'status', 'criadaEm'])
+        && novo().motoristaId == get(caminhoCarona(novo().caronaId)).data.motoristaId
+        && novo().motoristaId != request.auth.uid
+        && get(caminhoCarona(novo().caronaId)).data.vagasDisponiveis > 0;
+
+      // Passageiro cancela (RF-12) ou pede de novo depois de ter cancelado.
+      allow update: if verificado()
+        && request.auth.uid == resource.data.passageiroId
+        && mesmasPartes()
+        && (
+          (resource.data.status in ['pendente', 'confirmada'] && novo().status == 'cancelada')
+          || (resource.data.status == 'cancelada' && novo().status == 'pendente')
+        );
+
+      // Motorista aceita ou recusa um pedido pendente (RF-08).
+      allow update: if verificado()
+        && request.auth.uid == resource.data.motoristaId
+        && mesmasPartes()
+        && resource.data.status == 'pendente'
+        && (novo().status == 'recusada' || (novo().status == 'confirmada' && descontouUmaVaga()));
+
+      allow delete: if false;
+    }
+
+    // ---------- avaliacoes/{reservaId}_{autorId}: notas pós-viagem ----------
+
+    // Só avalia quem participou de uma viagem com vaga confirmada, e só a outra parte.
+    function podeAvaliar(d) {
+      let reserva = get(caminhoReserva(d.reservaId)).data;
+      return reserva.status == 'confirmada'
+        && reserva.caronaId == d.caronaId
+        && (
+          (request.auth.uid == reserva.passageiroId && d.avaliadoId == reserva.motoristaId)
+          || (request.auth.uid == reserva.motoristaId && d.avaliadoId == reserva.passageiroId)
+        );
+    }
+
+    match /avaliacoes/{avaliacaoId} {
+      allow read: if verificado();
+      allow create: if verificado()
+        && avaliacaoId == novo().reservaId + '_' + request.auth.uid
+        && novo().autorId == request.auth.uid
+        && novo().nota is int && novo().nota >= 1 && novo().nota <= 5
+        && novo().keys().hasOnly(['reservaId', 'caronaId', 'autorId', 'avaliadoId', 'nota', 'criadaEm'])
+        && podeAvaliar(novo());
+      // Notas não podem ser alteradas nem apagadas.
+      allow update, delete: if false;
+    }
+  }
+}

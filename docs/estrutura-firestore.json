@@ -1,0 +1,252 @@
+{
+  "_sobre": "Estrutura do Cloud Firestore do Carona Campus, exportada a partir dos itens cadastrados. Cada coleção é um objeto { idDoDocumento: campos }. Regras de acesso em firestore.rules.",
+  "_exportadoEm": "2026-11-15T20:12:27.051Z",
+  "usuarios": {
+    "demo-beatriz": {
+      "nome": "Beatriz Lima",
+      "cidade": "Curitiba",
+      "membroDesde": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-camila": {
+      "nome": "Camila Silveira",
+      "cidade": "Pato Branco",
+      "bio": "Engenharia Ambiental. Viajo para Curitiba quase toda sexta.",
+      "membroDesde": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-gabriel": {
+      "nome": "Gabriel Moretti",
+      "cidade": "Guarapuava",
+      "bio": "Carro com ar-condicionado, sem fumantes.",
+      "membroDesde": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-lucas": {
+      "nome": "Lucas Andrade",
+      "cidade": "Francisco Beltrão",
+      "bio": "Trabalho em Pato Branco e volto para casa todo dia.",
+      "membroDesde": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-mariana": {
+      "nome": "Mariana Costa",
+      "cidade": "Cascavel",
+      "membroDesde": "2026-11-15T20:12:20.416Z"
+    }
+  },
+  "caronas": {
+    "demo-c1": {
+      "motoristaId": "demo-camila",
+      "origem": "Pato Branco",
+      "destino": "Curitiba",
+      "paradas": [
+        "Guarapuava",
+        "Ponta Grossa"
+      ],
+      "trajeto": [
+        "pato branco",
+        "guarapuava",
+        "ponta grossa",
+        "curitiba"
+      ],
+      "primeiraSaida": "2026-11-20T21:00:00.000Z",
+      "validaAte": "9999-12-31T23:59:59.999Z",
+      "vagasTotais": 3,
+      "vagasDisponiveis": 2,
+      "valorPorVaga": 90,
+      "observacoes": "Saio da frente da rodoviária. Uma mala média por pessoa.",
+      "recorrencia": {
+        "diasSemana": [
+          5
+        ]
+      },
+      "textoOriginal": "saio de Pato Branco toda sexta às 18h pra Curitiba, passo por Guarapuava e Ponta Grossa, 3 vagas, R$ 90",
+      "criadaEm": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-c2": {
+      "motoristaId": "demo-lucas",
+      "origem": "Pato Branco",
+      "destino": "Francisco Beltrão",
+      "paradas": [],
+      "trajeto": [
+        "pato branco",
+        "francisco beltrao"
+      ],
+      "primeiraSaida": "2026-11-16T21:30:00.000Z",
+      "validaAte": "9999-12-31T23:59:59.999Z",
+      "vagasTotais": 4,
+      "vagasDisponiveis": 4,
+      "valorPorVaga": 15,
+      "recorrencia": {
+        "diasSemana": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "criadaEm": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-c3": {
+      "motoristaId": "demo-mariana",
+      "origem": "Cascavel",
+      "destino": "Foz do Iguaçu",
+      "paradas": [
+        "Medianeira"
+      ],
+      "trajeto": [
+        "cascavel",
+        "medianeira",
+        "foz do iguacu"
+      ],
+      "primeiraSaida": "2026-11-17T10:30:00.000Z",
+      "validaAte": "2026-11-17T10:30:00.000Z",
+      "vagasTotais": 3,
+      "vagasDisponiveis": 3,
+      "valorPorVaga": 40,
+      "criadaEm": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-c4": {
+      "motoristaId": "demo-gabriel",
+      "origem": "Guarapuava",
+      "destino": "Ponta Grossa",
+      "paradas": [],
+      "trajeto": [
+        "guarapuava",
+        "ponta grossa"
+      ],
+      "primeiraSaida": "2026-11-16T17:00:00.000Z",
+      "validaAte": "2026-11-16T17:00:00.000Z",
+      "vagasTotais": 2,
+      "vagasDisponiveis": 1,
+      "valorPorVaga": 50,
+      "criadaEm": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-c5": {
+      "motoristaId": "demo-beatriz",
+      "origem": "Curitiba",
+      "destino": "Pato Branco",
+      "paradas": [
+        "Ponta Grossa",
+        "Guarapuava"
+      ],
+      "trajeto": [
+        "curitiba",
+        "ponta grossa",
+        "guarapuava",
+        "pato branco"
+      ],
+      "primeiraSaida": "2026-11-22T12:00:00.000Z",
+      "validaAte": "9999-12-31T23:59:59.999Z",
+      "vagasTotais": 4,
+      "vagasDisponiveis": 4,
+      "valorPorVaga": 95,
+      "observacoes": "Volto domingo de manhã.",
+      "recorrencia": {
+        "diasSemana": [
+          0
+        ]
+      },
+      "criadaEm": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-c6": {
+      "motoristaId": "demo-gabriel",
+      "origem": "Guarapuava",
+      "destino": "Curitiba",
+      "paradas": [
+        "Ponta Grossa"
+      ],
+      "trajeto": [
+        "guarapuava",
+        "ponta grossa",
+        "curitiba"
+      ],
+      "primeiraSaida": "2026-11-18T20:30:00.000Z",
+      "validaAte": "2026-11-18T20:30:00.000Z",
+      "vagasTotais": 3,
+      "vagasDisponiveis": 3,
+      "valorPorVaga": 70,
+      "criadaEm": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-c7": {
+      "motoristaId": "demo-camila",
+      "origem": "Curitiba",
+      "destino": "Pato Branco",
+      "paradas": [
+        "Ponta Grossa"
+      ],
+      "trajeto": [
+        "curitiba",
+        "ponta grossa",
+        "pato branco"
+      ],
+      "primeiraSaida": "2026-11-10T12:00:00.000Z",
+      "validaAte": "2026-11-10T12:00:00.000Z",
+      "vagasTotais": 3,
+      "vagasDisponiveis": 1,
+      "valorPorVaga": 90,
+      "criadaEm": "2026-11-15T20:12:20.416Z"
+    }
+  },
+  "reservas": {
+    "demo-c1_demo-lucas": {
+      "caronaId": "demo-c1",
+      "passageiroId": "demo-lucas",
+      "motoristaId": "demo-camila",
+      "status": "confirmada",
+      "criadaEm": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-c1_demo-mariana": {
+      "caronaId": "demo-c1",
+      "passageiroId": "demo-mariana",
+      "motoristaId": "demo-camila",
+      "status": "pendente",
+      "criadaEm": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-c4_demo-beatriz": {
+      "caronaId": "demo-c4",
+      "passageiroId": "demo-beatriz",
+      "motoristaId": "demo-gabriel",
+      "status": "confirmada",
+      "criadaEm": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-c7_demo-beatriz": {
+      "caronaId": "demo-c7",
+      "passageiroId": "demo-beatriz",
+      "motoristaId": "demo-camila",
+      "status": "confirmada",
+      "criadaEm": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-c7_demo-gabriel": {
+      "caronaId": "demo-c7",
+      "passageiroId": "demo-gabriel",
+      "motoristaId": "demo-camila",
+      "status": "confirmada",
+      "criadaEm": "2026-11-15T20:12:20.416Z"
+    }
+  },
+  "avaliacoes": {
+    "demo-c7_demo-beatriz_demo-beatriz": {
+      "reservaId": "demo-c7_demo-beatriz",
+      "caronaId": "demo-c7",
+      "autorId": "demo-beatriz",
+      "avaliadoId": "demo-camila",
+      "nota": 5,
+      "criadaEm": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-c7_demo-gabriel_demo-camila": {
+      "reservaId": "demo-c7_demo-gabriel",
+      "caronaId": "demo-c7",
+      "autorId": "demo-camila",
+      "avaliadoId": "demo-gabriel",
+      "nota": 4,
+      "criadaEm": "2026-11-15T20:12:20.416Z"
+    },
+    "demo-c7_demo-gabriel_demo-gabriel": {
+      "reservaId": "demo-c7_demo-gabriel",
+      "caronaId": "demo-c7",
+      "autorId": "demo-gabriel",
+      "avaliadoId": "demo-camila",
+      "nota": 5,
+      "criadaEm": "2026-11-15T20:12:20.416Z"
+    }
+  }
+}

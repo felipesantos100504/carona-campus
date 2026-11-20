@@ -1,7 +1,5 @@
 # PRD — Carona Campus
 
-> **Nome provisório.** Como a proposta passou a ser de caronas entre cidades, aberta a qualquer pessoa, o nome "Carona Campus" será substituído (ver seção 9).
-
 ## 1. Problema
 
 Quem viaja com frequência entre cidades — para estudar, trabalhar ou visitar a família — costuma combinar caronas em grupos de mensagens. O fluxo intenso de conversas faz com que ofertas e pedidos se percam em poucos minutos, impede a busca por um trajeto específico e não deixa nenhum registro de quem viajou com quem. Apps de carona existentes resolvem parte disso, mas exigem formulários longos para publicar, obrigam o motorista a republicar a mesma viagem toda semana e só mostram viagens com exatamente a origem e o destino buscados, ignorando quem passa pela cidade do passageiro no meio do caminho.
@@ -14,18 +12,18 @@ Pessoas que fazem viagens intermunicipais com regularidade — estudantes, traba
 
 | ID | Requisito | Critério de aceite |
 |---|---|---|
-| RF-01 | Usuário se cadastra com e-mail verificado. | Sistema envia um link de confirmação e só libera o uso do app depois que o e-mail é verificado. |
+| RF-01 | Usuário se cadastra com e-mail verificado. | Sistema envia um link de confirmação e só libera o uso do app depois que o e-mail é verificado. Na versão web, o usuário também pode entrar com a conta Google. |
 | RF-02 | Usuário faz login. | Sistema mantém a sessão ativa entre aberturas do app, sem exigir novo login. |
 | RF-03 | Usuário cadastra foto de perfil. | Sistema salva a foto e a exibe no perfil do usuário. |
 | RF-04 | Motorista descreve a viagem em texto livre, como numa mensagem de WhatsApp. | Sistema extrai origem, destino, paradas, data, horário, vagas e valor por vaga do texto e exibe para confirmação antes de salvar. |
 | RF-05 | Motorista cadastra uma viagem recorrente (ex.: toda sexta às 18h). | Sistema salva os dias da semana da viagem e a exibe nas buscas de todas as semanas, sem o motorista precisar publicá-la de novo. |
 | RF-06 | Passageiro busca carona informando origem, destino e data. | Sistema exibe as viagens compatíveis, incluindo as que passam pela origem e pelo destino buscados como paradas intermediárias, na ordem do trajeto. |
-| RF-07 | Passageiro solicita uma vaga em uma viagem. | Sistema registra a solicitação e notifica o motorista. |
-| RF-08 | Motorista confirma uma solicitação de vaga. | Sistema reserva a vaga, atualiza a disponibilidade e notifica o passageiro. |
+| RF-07 | Passageiro solicita uma vaga em uma viagem. | Sistema registra a solicitação e avisa o motorista dentro do app (contador de pedidos pendentes na aba Viagens). |
+| RF-08 | Motorista confirma ou recusa uma solicitação de vaga. | Sistema reserva a vaga, atualiza a disponibilidade e mostra ao passageiro a situação do pedido na reserva. |
 | RF-09 | Usuário consulta suas viagens como motorista e suas reservas como passageiro. | Sistema exibe a lista de viagens e reservas ordenada por data. |
 | RF-10 | Motorista e passageiro se avaliam após a viagem. | Sistema registra a nota de cada um e atualiza a média de avaliações do avaliado. |
 | RF-11 | Usuário visualiza foto de perfil e avaliações do motorista antes de solicitar uma vaga. | Sistema exibe essas informações na tela de detalhes da viagem. |
-| RF-12 | Usuário cancela uma vaga já confirmada. | Sistema libera a vaga para outros interessados e notifica a outra parte do cancelamento. |
+| RF-12 | Usuário cancela uma vaga já confirmada. | Sistema libera a vaga para outros interessados, e o cancelamento aparece para o motorista nos pedidos da carona. |
 | RF-13 | Usuário consulta o valor por vaga de uma viagem. | Sistema exibe o valor apenas como informação e avisa que o pagamento é combinado diretamente com o motorista, sem transação dentro do app. |
 | RF-14 | Usuário tenta realizar uma ação sem conexão de rede. | Sistema exibe aviso de falta de conexão e impede o envio até a conexão ser restabelecida. |
 | RF-15 | Dois usuários solicitam a mesma vaga ao mesmo tempo. | Sistema confirma apenas a primeira solicitação aceita pelo motorista e informa às demais que a vaga não está mais disponível. |
@@ -60,17 +58,19 @@ Sem a IA, a publicação volta a ser um formulário com vários campos (origem, 
 
 **Saída:** origem, destino, paradas intermediárias, data, horário, quantidade de vagas, valor por vaga e dias da semana (quando a viagem é recorrente); o motorista confirma os dados extraídos (ou corrige manualmente) antes de a viagem ser salva no banco.
 
-**Quando a API falha:** o app exibe uma mensagem de erro e libera todos os campos da viagem para preenchimento manual, sem bloquear a publicação.
+**Como é implementada:** Gemini (`gemini-3.5-flash-lite`) chamado pelo Firebase AI Logic, que guarda a chave da API no Firebase. A resposta é pedida em JSON com formato fixo (saída estruturada) e cada campo é validado pelo app antes de preencher o formulário (ADR-0007).
+
+**Quando a API falha:** se o Gemini estiver fora do ar, demorar mais de 15 segundos ou responder fora do formato esperado, o app avisa o motorista e usa uma extração por regras (reconhece as cidades do catálogo e padrões como "pra Curitiba", "passo por Guarapuava", "18h", "3 vagas", "R$ 90"). Se nem ela reconhecer nada, libera todos os campos para preenchimento manual. A publicação nunca é bloqueada.
 
 **Dados enviados à LLM:** apenas o texto livre digitado pelo motorista (sem e-mail, foto, localização ou qualquer outro dado de identificação do usuário).
 
 ## 7. Escopo da v1
 
-- Cadastro e login com e-mail verificado (Firebase Auth) + foto de perfil.
+- Cadastro e login com e-mail verificado (Firebase Auth), login com Google na versão web e foto de perfil.
 - Publicação de viagem via texto livre, com a IA organizando os dados e opção de preenchimento manual.
 - Viagens recorrentes (dias da semana), sem republicar a cada semana.
 - Busca por origem, destino e data, incluindo viagens que passam pelo trajeto do passageiro (paradas intermediárias).
-- Solicitação de vaga pelo passageiro e confirmação pelo motorista.
+- Solicitação de vaga pelo passageiro e confirmação ou recusa pelo motorista, com aviso de pedidos pendentes dentro do app.
 - Valor por vaga exibido apenas como informação; pagamento combinado diretamente entre motorista e passageiro.
 - Minhas viagens (como motorista) e minhas reservas (como passageiro).
 - Avaliação mútua pós-viagem (nota simples) e perfil com avaliações.
@@ -86,12 +86,14 @@ Telas previstas: login e cadastro; início e busca de caronas; resultados da bus
 | Rastreamento da viagem em tempo real | Exige localização contínua em segundo plano e infraestrutura extra, sem relação com o problema de encontrar e publicar caronas. |
 | Cálculo de rota otimizada/rateio automático de combustível | O motorista define o valor por vaga; calcular rotas e custos consome tempo desproporcional ao prazo. |
 | Comentários/reviews em texto além da nota | Uma nota rápida é suficiente para construir confiança nesta fase. |
-| Notificações push sofisticadas (ex: alertas de proximidade) | Exige infraestrutura extra não essencial para validar a publicação e a busca de caronas. |
+| Notificações push (ex.: novo pedido, alertas de proximidade) | Exige um build nativo do app e um servidor para o envio; na v1 os avisos aparecem dentro do app (contador de pedidos pendentes e situação da reserva). |
 | Verificação de identidade além de e-mail e foto (ex: CNH, selfie com documento) | E-mail verificado, foto de perfil e avaliações bastam nesta fase; a verificação por telefone poderá ser considerada depois. |
 
-## 9. Decisões em aberto
+## 9. Decisões tomadas
 
-| Decisão | Proposta atual |
+| Decisão | Resultado |
 |---|---|
-| Nome do app | "Carona Campus" não representa mais a proposta de caronas entre cidades; o grupo precisa escolher um novo nome. |
-| Valor por vaga | Exibir o valor apenas como informação, sem pagamento pelo app (RF-13), a confirmar com o grupo. |
+| Nome do app | Decidido: o grupo manteve "Carona Campus". |
+| Valor por vaga | Decidido: o valor é apenas informativo, sem pagamento pelo app (RF-13), como nos apps de transporte da região. |
+| Login com Google | Decidido: disponível na versão web; no celular (Expo Go) o login é por e-mail e senha (ADR-0006). |
+| Foto de perfil | Decidido: foto reduzida gravada no próprio perfil, sem o Firebase Storage, que exige plano pago (ADR-0008). |

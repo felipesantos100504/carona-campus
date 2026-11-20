@@ -1,16 +1,12 @@
 import { Redirect } from 'expo-router';
-import { useEffect, useState } from 'react';
 
-import { sessao } from '@/data/repositorio';
+import { useSessao } from '@/hooks/use-sessao';
 
-/** Decide a tela inicial: app (sessão local ativa) ou login. */
+/** Decide a tela inicial a partir da sessão do Firebase Auth. */
 export default function Inicio() {
-  const [ativa, setAtiva] = useState<boolean | null>(null);
+  const { usuario, verificado } = useSessao();
 
-  useEffect(() => {
-    sessao.estaAtiva().then(setAtiva);
-  }, []);
-
-  if (ativa === null) return null;
-  return <Redirect href={ativa ? '/(tabs)' : '/login'} />;
+  if (!usuario) return <Redirect href="/login" />;
+  if (!verificado) return <Redirect href="/verificar-email" />;
+  return <Redirect href="/(tabs)" />;
 }

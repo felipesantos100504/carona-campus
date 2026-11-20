@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Aviso } from '@/components/aviso';
@@ -13,19 +12,13 @@ import { Cartao } from '@/components/cartao';
 import { EstadoCarregando, EstadoErro } from '@/components/estados';
 import { Selo } from '@/components/selo';
 import { Tela } from '@/components/tela';
-import {
-  definirSimularErro,
-  obterConfig,
-  obterMeuPerfil,
-  restaurarDadosDeExemplo,
-  salvarMeuPerfil,
-  sessao,
-} from '@/data/repositorio';
+import { sair as sairDaConta } from '@/data/auth';
+import { definirSimularErro, obterConfig, obterMeuPerfil, salvarMeuPerfil } from '@/data/repositorio';
 import { Usuario } from '@/data/tipos';
 import { useCarregamento } from '@/hooks/use-carregamento';
 import { cores, espaco, raio, tipografia } from '@/theme';
+import { escolherFoto } from '@/utils/foto';
 
-// A troca de foto (RF-03) entra com o recurso nativo de câmera/galeria na etapa 3.
 export default function Perfil() {
   const perfil = useCarregamento(obterMeuPerfil);
   const [simularErro, setSimularErro] = useState(false);
@@ -36,6 +29,8 @@ export default function Perfil() {
   const [bio, setBio] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [trocandoFoto, setTrocandoFoto] = useState(false);
+  const [erroFoto, setErroFoto] = useState<string | null>(null);
 
   useEffect(() => {
     obterConfig().then((c) => setSimularErro(c.simularErro));
@@ -47,16 +42,25 @@ export default function Perfil() {
     perfil.recarregar();
   }
 
+  // Ao sair, as rotas protegidas levam de volta para o login.
   async function sair() {
-    await sessao.sair();
-    router.replace('/login');
+    await sairDaConta();
   }
 
-  async function restaurar() {
-    await restaurarDadosDeExemplo();
-    setSimularErro(false);
-    setEditando(false);
-    perfil.recarregar();
+  // RF-03: a foto vai reduzida para o próprio perfil no Firestore (ver utils/foto.ts).
+  async function trocarFoto() {
+    setErroFoto(null);
+    try {
+      const foto = await escolherFoto();
+      if (!foto) return;
+      setTrocandoFoto(true);
+      await salvarMeuPerfil({ fotoUri: foto });
+      await perfil.recarregar();
+    } catch (e) {
+      setErroFoto(e instanceof Error ? e.message : 'Não foi possível trocar a foto.');
+    } finally {
+      setTrocandoFoto(false);
+    }
   }
 
   function editar(usuario: Usuario) {
@@ -97,11 +101,20 @@ export default function Perfil() {
       {usuario ? (
         <Cartao>
           <View style={styles.identidade}>
-            <Avatar nome={usuario.nome} fotoUri={usuario.fotoUri} tamanho={72} verificado />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Trocar foto de perfil"
+              disabled={trocandoFoto}
+              onPress={trocarFoto}
+              style={styles.foto}>
+              <Avatar nome={usuario.nome} fotoUri={usuario.fotoUri} tamanho={72} verificado />
+              <Text style={styles.trocarFoto}>{trocandoFoto ? 'Salvando…' : 'Trocar foto'}</Text>
+            </Pressable>
             <View style={styles.flex}>
               <Text style={styles.nome}>{usuario.nome}</Text>
               <Text style={styles.legenda}>
-                <Ionicons name="location-outline" size={13} color={cores.textoSecundario} /> {usuario.cidade}
+                <Ionicons name="location-outline" size={13} color={cores.textoSecundario} />{' '}
+                {usuario.cidade || 'Cidade não informada'}
               </Text>
               <Selo rotulo="E-mail verificado" icone="shield-checkmark-outline" />
             </View>
@@ -116,10 +129,15 @@ export default function Perfil() {
             <View style={styles.divisor} />
             <View style={styles.numero}>
               <Text style={styles.valor}>{usuario.totalViagens}</Text>
-              <Text style={styles.legenda}>viagens feitas</Text>
+              <Text style={styles.legenda}>caronas oferecidas</Text>
             </View>
           </View>
+          {erroFoto ? <Aviso tipo="erro">{erroFoto}</Aviso> : null}
         </Cartao>
+      ) : null}
+
+      {usuario && !usuario.cidade && !editando ? (
+        <Aviso icone="location-outline">Complete seu perfil com a sua cidade para os outros usuários te conhecerem.</Aviso>
       ) : null}
 
       {usuario && !editando ? (
@@ -150,7 +168,7 @@ export default function Perfil() {
 
       <Botao titulo="Sair da conta" variante="perigo" icone="log-out-outline" onPress={sair} />
 
-      {/* Ferramentas para a apresentação: forçar o estado de erro e voltar aos dados iniciais. */}
+      {/* Ferramenta para a apresentação: força o comportamento sem conexão (RF-14 e RNF-04). */}
       <View style={styles.dev}>
         <Text style={styles.devTitulo}>Modo demonstração</Text>
         <View style={styles.linha}>
@@ -161,7 +179,6 @@ export default function Perfil() {
             trackColor={{ true: cores.verde, false: cores.bordaForte }}
           />
         </View>
-        <Botao titulo="Restaurar dados de exemplo" variante="contorno" icone="refresh" pequeno onPress={restaurar} />
       </View>
     </Tela>
   );
@@ -170,6 +187,8 @@ export default function Perfil() {
 const styles = StyleSheet.create({
   flex: { flex: 1, gap: espaco.xs },
   identidade: { flexDirection: 'row', alignItems: 'center', gap: espaco.md },
+  foto: { alignItems: 'center', gap: 2 },
+  trocarFoto: { ...tipografia.legenda, color: cores.primaria },
   nome: { ...tipografia.tituloM, color: cores.texto },
   legenda: { ...tipografia.legenda, color: cores.textoSecundario },
   numeros: {

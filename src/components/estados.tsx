@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { ComponentProps, useEffect, useRef } from 'react';
+import { ComponentProps, useEffect, useState } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 
 import { cores, espaco, raio, tipografia } from '@/theme';
@@ -10,7 +10,7 @@ type NomeIcone = ComponentProps<typeof Ionicons>['name'];
 
 /** Esqueletos de cartão piscando enquanto a lista carrega. */
 export function EstadoCarregando({ itens = 3, mensagem }: { itens?: number; mensagem?: string }) {
-  const opacidade = useRef(new Animated.Value(0.4)).current;
+  const [opacidade] = useState(() => new Animated.Value(0.4));
 
   useEffect(() => {
     const animacao = Animated.loop(

@@ -9,7 +9,7 @@ import { Aviso } from '@/components/aviso';
 import { Botao } from '@/components/botao';
 import { EstadoCarregando, EstadoErro, EstadoVazio } from '@/components/estados';
 import { Selo } from '@/components/selo';
-import { avaliarViagem, listarMinhasReservas } from '@/data/repositorio';
+import { avaliarViagem, obterViagemParaAvaliar } from '@/data/repositorio';
 import { useCarregamento } from '@/hooks/use-carregamento';
 import { cores, espaco, raio, tipografia } from '@/theme';
 import { formatarData } from '@/utils/formato';
@@ -17,12 +17,10 @@ import { formatarData } from '@/utils/formato';
 const RETORNO = ['', 'Que pena. Algo deu errado na viagem?', 'Abaixo do esperado.', 'Viagem regular.', 'Boa viagem!', 'Excelente! Viagem segura e pontual.'];
 
 export default function Avaliar() {
-  // Parâmetro recebido da lista de viagens: /avaliar/r1
+  // Parâmetro recebido da lista de viagens ou dos detalhes da carona.
+  // RF-10: o passageiro avalia o motorista e o motorista avalia o passageiro.
   const { reservaId } = useLocalSearchParams<{ reservaId: string }>();
-  const detalhe = useCarregamento(
-    async () => (await listarMinhasReservas()).find((item) => item.reserva.id === reservaId) ?? null,
-    [reservaId],
-  );
+  const detalhe = useCarregamento(() => obterViagemParaAvaliar(reservaId), [reservaId]);
 
   const [nota, setNota] = useState(0);
   const [enviando, setEnviando] = useState(false);
@@ -63,8 +61,20 @@ export default function Avaliar() {
     );
   }
 
-  const { carona, motorista } = detalhe.dados;
-  const primeiroNome = motorista.nome.split(' ')[0];
+  const { carona, avaliado, papel, reserva } = detalhe.dados;
+  const primeiroNome = avaliado.nome.split(' ')[0];
+
+  if (reserva.avaliacao) {
+    return (
+      <Folha>
+        <EstadoVazio
+          titulo="Avaliação enviada"
+          mensagem={`Você deu ${reserva.avaliacao} ${reserva.avaliacao === 1 ? 'estrela' : 'estrelas'} para ${primeiroNome}.`}
+          icone="star"
+        />
+      </Folha>
+    );
+  }
 
   return (
     <Folha>
@@ -76,8 +86,9 @@ export default function Avaliar() {
       </View>
 
       <View style={styles.motorista}>
-        <Avatar nome={motorista.nome} fotoUri={motorista.fotoUri} tamanho={72} verificado />
-        <Text style={styles.nome}>{motorista.nome}</Text>
+        <Avatar nome={avaliado.nome} fotoUri={avaliado.fotoUri} tamanho={72} verificado />
+        <Text style={styles.nome}>{avaliado.nome}</Text>
+        <Text style={styles.papel}>{papel === 'passageiro' ? 'Motorista' : 'Passageiro'}</Text>
         <Selo rotulo="E-mail verificado" icone="shield-checkmark-outline" estilo={styles.centro} />
       </View>
 
@@ -140,7 +151,7 @@ function Folha({ children }: { children: ReactNode }) {
 
 const styles = StyleSheet.create({
   raiz: { flex: 1, justifyContent: 'flex-end' },
-  fundo: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 23, 42, 0.45)' },
+  fundo: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15, 23, 42, 0.45)' },
   folha: {
     maxHeight: '90%',
     backgroundColor: cores.superficie,
@@ -175,6 +186,7 @@ const styles = StyleSheet.create({
   motorista: { alignItems: 'center', gap: espaco.xs },
   centro: { alignSelf: 'center' },
   nome: { ...tipografia.tituloP, color: cores.texto, marginTop: espaco.xs },
+  papel: { ...tipografia.legenda, color: cores.textoSecundario },
   pergunta: { ...tipografia.corpo, color: cores.texto, textAlign: 'center' },
   estrelas: { flexDirection: 'row', justifyContent: 'center', gap: espaco.sm },
   estrela: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },

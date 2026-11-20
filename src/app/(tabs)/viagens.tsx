@@ -10,16 +10,17 @@ import { Cabecalho } from '@/components/cabecalho';
 import { EstadoCarregando, EstadoErro, EstadoVazio } from '@/components/estados';
 import { Segmentado } from '@/components/segmentado';
 import { Selo, Tom } from '@/components/selo';
-import { listarMinhasCaronas, listarMinhasReservas } from '@/data/repositorio';
+import { listarMinhasCaronas, listarMinhasReservas, podeAvaliar } from '@/data/repositorio';
 import { Carona, ReservaDetalhada, StatusReserva } from '@/data/tipos';
 import { useCarregamento } from '@/hooks/use-carregamento';
 import { cores, espaco, raio, sombra, tipografia } from '@/theme';
-import { formatarData, formatarDiasSemana, formatarHora, formatarMoeda } from '@/utils/formato';
+import { formatarData, formatarDiasSemana, formatarHora, formatarMoeda, jaPassou } from '@/utils/formato';
 
 const STATUS: Record<StatusReserva, { rotulo: string; tom: Tom; cor: string }> = {
   pendente: { rotulo: 'Aguardando motorista', tom: 'indigo', cor: cores.primaria },
   confirmada: { rotulo: 'Vaga confirmada', tom: 'verdeForte', cor: cores.verde },
-  cancelada: { rotulo: 'Cancelada', tom: 'erro', cor: cores.erro },
+  recusada: { rotulo: 'Não aceita', tom: 'erro', cor: cores.erro },
+  cancelada: { rotulo: 'Cancelada', tom: 'neutro', cor: cores.textoSecundario },
   concluida: { rotulo: 'Viagem realizada', tom: 'neutro', cor: cores.textoSecundario },
 };
 
@@ -123,8 +124,11 @@ export default function Viagens() {
 
 function CartaoReserva({ item }: { item: ReservaDetalhada }) {
   const { reserva, carona, motorista } = item;
-  const status = STATUS[reserva.status];
-  const podeAvaliar = reserva.status === 'concluida' && !reserva.avaliacao;
+  const status =
+    reserva.status === 'recusada' && reserva.motivo === 'lotada'
+      ? { ...STATUS.recusada, rotulo: 'Vaga esgotada' }
+      : STATUS[reserva.status];
+  const avaliavel = podeAvaliar(reserva, carona);
 
   return (
     <Pressable
@@ -159,7 +163,7 @@ function CartaoReserva({ item }: { item: ReservaDetalhada }) {
         </View>
       </View>
 
-      {podeAvaliar ? (
+      {avaliavel ? (
         <View style={styles.linha}>
           <Text style={[styles.legenda, styles.flex]}>Sua avaliação ajuda a comunidade.</Text>
           <Botao
@@ -182,7 +186,7 @@ function CartaoReserva({ item }: { item: ReservaDetalhada }) {
 
 function CartaoMinhaCarona({ carona }: { carona: Carona }) {
   const reservadas = carona.vagasTotais - carona.vagasDisponiveis;
-  const passada = new Date(carona.dataHora).getTime() < Date.now();
+  const passada = jaPassou(carona.dataHora);
 
   return (
     <Pressable

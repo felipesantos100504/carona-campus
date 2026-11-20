@@ -44,3 +44,12 @@ app-example
 
 # Claude Code (local)
 .claude/
+
+# Variáveis de ambiente (modelo em .env.example)
+.env
+
+# Chave de conta de serviço do Firebase (scripts de dados). Nunca enviar ao GitHub.
+chave-servico.json
+
+# Logs dos emuladores do Firebase
+*-debug.log

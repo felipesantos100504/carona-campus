@@ -16,6 +16,7 @@ type Estado<T> =
 export function useCarregamento<T>(carregar: () => Promise<T>, dependencias: unknown[] = []) {
   const [estado, setEstado] = useState<Estado<T>>({ status: 'carregando' });
   const requisicao = useRef(0);
+  const chave = JSON.stringify(dependencias);
 
   const executar = useCallback(async () => {
     const atual = ++requisicao.current;
@@ -28,8 +29,9 @@ export function useCarregamento<T>(carregar: () => Promise<T>, dependencias: unk
         setEstado({ status: 'erro', erro: e instanceof Error ? e : new Error(String(e)) });
       }
     }
+    // As dependências vêm de quem usa o hook; a chave muda quando alguma delas muda.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, dependencias);
+  }, [chave]);
 
   useFocusEffect(
     useCallback(() => {

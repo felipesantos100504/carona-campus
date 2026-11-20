@@ -1,19 +1,25 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { ComponentProps } from 'react';
+import { ComponentProps, useEffect, useState } from 'react';
+import { ColorValue } from 'react-native';
 
+import { observarPedidosPendentes } from '@/data/repositorio';
 import { cores, fontes } from '@/theme';
 
 type NomeIcone = ComponentProps<typeof Ionicons>['name'];
 
 function icone(ativo: NomeIcone, inativo: NomeIcone) {
-  function IconeAba({ color, focused }: { color: string; focused: boolean }) {
+  function IconeAba({ color, focused }: { color: ColorValue; focused: boolean }) {
     return <Ionicons name={focused ? ativo : inativo} size={24} color={color} />;
   }
   return IconeAba;
 }
 
 export default function TabsLayout() {
+  // Aviso dentro do app (RF-07): pedidos de vaga esperando resposta do motorista.
+  const [pendentes, setPendentes] = useState(0);
+  useEffect(() => observarPedidosPendentes(setPendentes), []);
+
   return (
     <Tabs
       screenOptions={{
@@ -29,7 +35,12 @@ export default function TabsLayout() {
         name="publicar"
         options={{ title: 'Publicar', tabBarIcon: icone('add-circle', 'add-circle-outline') }}
       />
-      <Tabs.Screen name="viagens" options={{ title: 'Viagens', tabBarIcon: icone('car', 'car-outline') }} />
+      <Tabs.Screen name="viagens" options={{
+          title: 'Viagens',
+          tabBarIcon: icone('car', 'car-outline'),
+          tabBarBadge: pendentes > 0 ? pendentes : undefined,
+          tabBarBadgeStyle: { backgroundColor: cores.erro, fontFamily: fontes.rotulo },
+        }} />
       <Tabs.Screen
         name="perfil"
         options={{ title: 'Perfil', tabBarIcon: icone('person-circle', 'person-circle-outline') }}
