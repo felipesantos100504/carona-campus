@@ -182,10 +182,10 @@ Difícil de mudar depois: as telas dependem do formato de retorno do repositóri
 
 ---
 
-## ADR-0005 — Firebase pelo SDK JavaScript, Expo SDK 57 e cache offline próprio no celular
+## ADR-0005 — Firebase pelo SDK JavaScript, Expo SDK 57/58 e cache offline próprio no celular
 
 - **Data:** 2026-11-15
-- **Situação:** Aceita
+- **Situação:** Aceita; revisada em 2026-11-20 (SDK 58)
 - **Quem decidiu:** Equipe de Desenvolvimento
 
 ### Contexto
@@ -217,6 +217,10 @@ Positivas: o mesmo código roda no Expo Go (Android e iPhone) e no navegador; a 
 Negativas assumidas: no celular, o cache offline cobre só as listas do usuário (Viagens), e não a busca; sem conexão, a busca mostra o estado de erro. O SDK 57 trouxe ajustes de tipos e de lint que precisaram ser corrigidos nas telas.
 
 Difícil de mudar depois: migrar para o SDK nativo exigiria trocar a inicialização, a persistência da sessão e a forma de gerar o app para os testes.
+
+### Revisão (2026-11-20): Expo SDK 58
+
+Em 15/10/2026 saiu o Expo SDK 58, e o Expo Go das lojas foi atualizado: o iPhone de um integrante passou a recusar o projeto ("The installed version of Expo Go is for SDK 58.0.0") e no iPhone não é possível instalar uma versão antiga. Atualizamos para o SDK 58 (React Native 0.88, React 19.3, Node 22.13 ou superior). Ajustes: a web passou para `output: "single"` (aplicativo de página única), porque no SDK 58 a renderização no servidor do modo `static` esgotava a memória do Metro ao renderizar o app, que depende de Firebase e sessão no navegador; o idioma `pt-BR` da página passou a ser definido no layout raiz em vez do `+html.tsx`; e foram corrigidos tipos do React Native 0.88 (cor dos ícones das abas, componentes de lista).
 
 ---
 

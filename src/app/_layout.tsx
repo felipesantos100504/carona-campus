@@ -5,11 +5,18 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 
 import { SessaoProvider, useSessao } from '@/hooks/use-sessao';
 import { cores, fontes } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
+
+// Versão web: declara o idioma português para o navegador não oferecer
+// tradução e os leitores de tela usarem a pronúncia correta.
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  document.documentElement.lang = 'pt-BR';
+}
 
 export default function RootLayout() {
   return (

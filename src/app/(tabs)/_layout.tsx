@@ -10,7 +10,9 @@ type NomeIcone = ComponentProps<typeof Ionicons>['name'];
 
 function icone(ativo: NomeIcone, inativo: NomeIcone) {
   function IconeAba({ color, focused }: { color: ColorValue; focused: boolean }) {
-    return <Ionicons name={focused ? ativo : inativo} size={24} color={color} />;
+    // A barra de abas passa a cor como texto (ex.: "#0F766E"); o tipo do React
+    // Native 0.88 também admite número e null, que nunca chegam aqui.
+    return <Ionicons name={focused ? ativo : inativo} size={24} color={color as string} />;
   }
   return IconeAba;
 }

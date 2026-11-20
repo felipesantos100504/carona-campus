@@ -62,7 +62,7 @@ export default function Resultados() {
         />
       );
     }
-    return null;
+    return undefined;
   }
 
   const pronto = lista.status === 'pronto' && lista.dados.length > 0;
@@ -121,7 +121,7 @@ export default function Resultados() {
         }
         ListEmptyComponent={conteudo()}
         ListFooterComponent={
-          pronto ? <Aviso icone="cash-outline">O pagamento é combinado diretamente com o motorista ao embarcar.</Aviso> : null
+          pronto ? <Aviso icone="cash-outline">O pagamento é combinado diretamente com o motorista ao embarcar.</Aviso> : undefined
         }
         renderItem={({ item }) => (
           <CardCarona

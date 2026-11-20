@@ -27,13 +27,13 @@ A busca e a compatibilidade entre viagens são feitas por regras programadas, n�
 
 ## Stack
 
-- **App:** React Native + Expo SDK 57, Expo Router e TypeScript.
+- **App:** React Native + Expo SDK 58, Expo Router e TypeScript.
 - **Back-end:** Firebase (plano gratuito Spark): Authentication (e-mail/senha e Google) e Cloud Firestore.
 - **IA:** Gemini (`gemini-3.5-flash-lite`) pelo Firebase AI Logic.
 
 ## Como rodar
 
-Pré-requisitos: [Node.js](https://nodejs.org/) 20 ou superior e, para testar no celular, o app **Expo Go** atualizado (SDK 57) no Android ou iOS.
+Pré-requisitos: [Node.js](https://nodejs.org/) 22.13 ou superior (ou 24.3+) e, para testar no celular, o app **Expo Go** atualizado (SDK 58) no Android ou iOS.
 
 ```bash
 git clone https://github.com/felipesantos100504/carona-campus.git
