@@ -1,46 +1,47 @@
 {
   "_sobre": "Estrutura do Cloud Firestore do Carona Campus, exportada a partir dos itens cadastrados. Cada coleção é um objeto { idDoDocumento: campos }. Contém só os dados de demonstração (scripts/dados-exemplo.mjs). Regras de acesso em firestore.rules.",
-  "_exportadoEm": "2026-11-20T18:32:44.085Z",
+  "_exportadoEm": "2026-11-20T21:42:57.501Z",
   "usuarios": {
     "demo-beatriz": {
       "nome": "Beatriz Lima",
       "cidade": "Curitiba",
-      "membroDesde": "2026-11-20T18:32:27.006Z"
+      "fotoUri": "data:image/png;base64,iVBORw0KGgoAAAANSU… (foto em base64, 1 KB)",
+      "membroDesde": "2026-11-20T21:42:46.098Z"
     },
     "demo-camila": {
       "nome": "Camila Silveira",
       "cidade": "Pato Branco",
       "bio": "Engenharia Ambiental. Viajo para Curitiba quase toda sexta.",
-      "membroDesde": "2026-11-20T18:32:27.006Z"
+      "membroDesde": "2026-11-20T21:42:46.098Z"
     },
     "demo-gabriel": {
       "nome": "Gabriel Moretti",
       "cidade": "Guarapuava",
       "bio": "Carro com ar-condicionado, sem fumantes.",
-      "membroDesde": "2026-11-20T18:32:27.006Z"
+      "membroDesde": "2026-11-20T21:42:46.098Z"
     },
     "demo-lucas": {
       "nome": "Lucas Andrade",
       "cidade": "Francisco Beltrão",
       "bio": "Trabalho em Pato Branco e volto para casa todo dia.",
-      "membroDesde": "2026-11-20T18:32:27.006Z"
+      "membroDesde": "2026-11-20T21:42:46.098Z"
     },
     "demo-mariana": {
       "nome": "Mariana Costa",
       "cidade": "Cascavel",
-      "membroDesde": "2026-11-20T18:32:27.006Z"
+      "membroDesde": "2026-11-20T21:42:46.098Z"
     },
     "demo-motorista": {
       "nome": "Rafael Moreira",
       "cidade": "Quedas do Iguaçu",
       "bio": "Motorista da demonstração. Vou para Cascavel todo dia útil.",
-      "membroDesde": "2026-11-20T18:32:27.006Z"
+      "membroDesde": "2026-11-20T21:42:46.098Z"
     },
     "demo-passageiro": {
       "nome": "Júlia Andrade",
       "cidade": "Quedas do Iguaçu",
       "bio": "Passageira da demonstração. Estudo em Cascavel.",
-      "membroDesde": "2026-11-20T18:32:27.006Z"
+      "membroDesde": "2026-11-20T21:42:46.098Z"
     }
   },
   "caronas": {
@@ -71,7 +72,7 @@
         ]
       },
       "textoOriginal": "saio de Pato Branco toda sexta às 18h pra Curitiba, passo por Guarapuava e Ponta Grossa, 3 vagas, R$ 90",
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-c2": {
       "motoristaId": "demo-lucas",
@@ -97,7 +98,7 @@
           5
         ]
       },
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-c3": {
       "motoristaId": "demo-mariana",
@@ -116,7 +117,7 @@
       "vagasTotais": 3,
       "vagasDisponiveis": 3,
       "valorPorVaga": 40,
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-c4": {
       "motoristaId": "demo-gabriel",
@@ -129,10 +130,10 @@
       ],
       "primeiraSaida": "2026-11-21T17:00:00.000Z",
       "validaAte": "2026-11-21T17:00:00.000Z",
-      "vagasTotais": 2,
-      "vagasDisponiveis": 1,
+      "vagasTotais": 1,
+      "vagasDisponiveis": 0,
       "valorPorVaga": 50,
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-c5": {
       "motoristaId": "demo-beatriz",
@@ -159,7 +160,7 @@
           0
         ]
       },
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-c6": {
       "motoristaId": "demo-gabriel",
@@ -178,7 +179,7 @@
       "vagasTotais": 3,
       "vagasDisponiveis": 3,
       "valorPorVaga": 70,
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-c7": {
       "motoristaId": "demo-camila",
@@ -197,7 +198,7 @@
       "vagasTotais": 3,
       "vagasDisponiveis": 1,
       "valorPorVaga": 90,
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-m1": {
       "motoristaId": "demo-motorista",
@@ -228,7 +229,7 @@
         ]
       },
       "textoOriginal": "saio do Posto Fênix em Quedas do Iguaçu de segunda a sexta às 7h pra Cascavel, passo por Catanduvas, 3 vagas, R$ 35",
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-m2": {
       "motoristaId": "demo-motorista",
@@ -253,7 +254,7 @@
           5
         ]
       },
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-m3": {
       "motoristaId": "demo-motorista",
@@ -270,58 +271,88 @@
       "vagasTotais": 3,
       "vagasDisponiveis": 2,
       "valorPorVaga": 35,
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     }
   },
   "reservas": {
+    "demo-c1_demo-gabriel": {
+      "caronaId": "demo-c1",
+      "passageiroId": "demo-gabriel",
+      "motoristaId": "demo-camila",
+      "status": "cancelada",
+      "canceladaEm": "2026-11-20T21:42:46.098Z",
+      "criadaEm": "2026-11-20T21:42:46.098Z"
+    },
     "demo-c1_demo-lucas": {
       "caronaId": "demo-c1",
       "passageiroId": "demo-lucas",
       "motoristaId": "demo-camila",
       "status": "confirmada",
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "respondidaEm": "2026-11-20T21:42:46.098Z",
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-c1_demo-mariana": {
       "caronaId": "demo-c1",
       "passageiroId": "demo-mariana",
       "motoristaId": "demo-camila",
       "status": "pendente",
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "criadaEm": "2026-11-20T21:42:46.098Z"
+    },
+    "demo-c3_demo-lucas": {
+      "caronaId": "demo-c3",
+      "passageiroId": "demo-lucas",
+      "motoristaId": "demo-mariana",
+      "status": "recusada",
+      "respondidaEm": "2026-11-20T21:42:46.098Z",
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-c4_demo-beatriz": {
       "caronaId": "demo-c4",
       "passageiroId": "demo-beatriz",
       "motoristaId": "demo-gabriel",
       "status": "confirmada",
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "respondidaEm": "2026-11-20T21:42:46.098Z",
+      "criadaEm": "2026-11-20T21:42:46.098Z"
+    },
+    "demo-c4_demo-mariana": {
+      "caronaId": "demo-c4",
+      "passageiroId": "demo-mariana",
+      "motoristaId": "demo-gabriel",
+      "status": "recusada",
+      "motivo": "lotada",
+      "respondidaEm": "2026-11-20T21:42:46.098Z",
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-c7_demo-beatriz": {
       "caronaId": "demo-c7",
       "passageiroId": "demo-beatriz",
       "motoristaId": "demo-camila",
       "status": "confirmada",
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "respondidaEm": "2026-11-20T21:42:46.098Z",
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-c7_demo-gabriel": {
       "caronaId": "demo-c7",
       "passageiroId": "demo-gabriel",
       "motoristaId": "demo-camila",
       "status": "confirmada",
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "respondidaEm": "2026-11-20T21:42:46.098Z",
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-m1_demo-passageiro": {
       "caronaId": "demo-m1",
       "passageiroId": "demo-passageiro",
       "motoristaId": "demo-motorista",
       "status": "pendente",
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-m3_demo-passageiro": {
       "caronaId": "demo-m3",
       "passageiroId": "demo-passageiro",
       "motoristaId": "demo-motorista",
       "status": "confirmada",
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "respondidaEm": "2026-11-20T21:42:46.098Z",
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     }
   },
   "avaliacoes": {
@@ -331,7 +362,7 @@
       "autorId": "demo-beatriz",
       "avaliadoId": "demo-camila",
       "nota": 5,
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-c7_demo-gabriel_demo-camila": {
       "reservaId": "demo-c7_demo-gabriel",
@@ -339,7 +370,7 @@
       "autorId": "demo-camila",
       "avaliadoId": "demo-gabriel",
       "nota": 4,
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     },
     "demo-c7_demo-gabriel_demo-gabriel": {
       "reservaId": "demo-c7_demo-gabriel",
@@ -347,7 +378,7 @@
       "autorId": "demo-gabriel",
       "avaliadoId": "demo-camila",
       "nota": 5,
-      "criadaEm": "2026-11-20T18:32:27.006Z"
+      "criadaEm": "2026-11-20T21:42:46.098Z"
     }
   }
 }

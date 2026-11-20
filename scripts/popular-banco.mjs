@@ -55,6 +55,7 @@ for (const u of usuarios) {
     nome: u.nome,
     cidade: u.cidade,
     ...(u.bio ? { bio: u.bio } : {}),
+    ...(u.fotoUri ? { fotoUri: u.fotoUri } : {}),
     membroDesde: agora,
   });
 }
@@ -90,6 +91,10 @@ for (const r of reservas) {
     passageiroId: r.passageiroId,
     motoristaId: carona.motoristaId,
     status: r.status,
+    // Os mesmos campos que o app grava em cada mudança de status.
+    ...(r.motivo ? { motivo: r.motivo } : {}),
+    ...(r.status === 'confirmada' || r.status === 'recusada' ? { respondidaEm: agora } : {}),
+    ...(r.status === 'cancelada' ? { canceladaEm: agora } : {}),
     criadaEm: agora,
   });
 }
