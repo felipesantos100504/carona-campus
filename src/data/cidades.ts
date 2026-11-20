@@ -26,10 +26,19 @@ export const CIDADES = [
   'Realeza',
   'Rio Bonito do Iguaçu',
   'Santa Helena',
+  "São Jorge d'Oeste",
   'Toledo',
   'Três Barras do Paraná',
   'União da Vitória',
 ];
+
+/** Nomes curtos que as pessoas costumam escrever no lugar do nome completo. */
+export const APELIDOS: Record<string, string> = {
+  'sao jorge': "São Jorge d'Oeste",
+  'beltrao': 'Francisco Beltrão',
+  'foz': 'Foz do Iguaçu',
+  'quedas': 'Quedas do Iguaçu',
+};
 
 /** Minúsculas e sem acentos, para comparar nomes digitados de jeitos diferentes. */
 export function normalizar(texto: string) {

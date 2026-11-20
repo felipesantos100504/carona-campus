@@ -24,7 +24,15 @@ import {
 import { Reserva, Solicitacao } from '@/data/tipos';
 import { useCarregamento } from '@/hooks/use-carregamento';
 import { cores, espaco, tipografia } from '@/theme';
-import { formatarDataExtensa, formatarDiasSemana, formatarHora, formatarMoeda, jaPassou } from '@/utils/formato';
+import {
+  contar,
+  formatarDataExtensa,
+  formatarDiasSemana,
+  formatarHora,
+  formatarMoeda,
+  formatarNota,
+  jaPassou,
+} from '@/utils/formato';
 
 export default function DetalhesCarona() {
   // Parâmetro recebido da lista: /carona/c1
@@ -208,10 +216,11 @@ export default function DetalhesCarona() {
           <View style={styles.dadosMotorista}>
             <View style={styles.linhaNome}>
               <Text style={styles.nome}>{motorista.nome}</Text>
-              <Selo rotulo={motorista.avaliacaoMedia.toFixed(1)} icone="star" tom="aviso" />
+              <Selo rotulo={formatarNota(motorista.avaliacaoMedia, motorista.totalAvaliacoes)} icone="star" tom="aviso" />
             </View>
             <Text style={styles.legenda}>
-              {motorista.totalAvaliacoes} avaliações · {motorista.totalViagens} viagens realizadas
+              {contar(motorista.totalAvaliacoes, 'avaliação', 'avaliações')} ·{' '}
+              {contar(motorista.totalViagens, 'carona oferecida', 'caronas oferecidas')}
             </Text>
             <Selo rotulo="E-mail verificado" icone="shield-checkmark-outline" />
           </View>
@@ -277,7 +286,7 @@ function PedidosDeVaga({ solicitacoes, viagemAconteceu, enviando, responder }: P
                 <Text style={styles.nomePedido}>{s.passageiro.nome}</Text>
                 <Text style={styles.legenda}>
                   {s.passageiro.totalAvaliacoes > 0
-                    ? `${s.passageiro.avaliacaoMedia.toFixed(1)} ★ · ${s.passageiro.totalAvaliacoes} avaliações`
+                    ? `${formatarNota(s.passageiro.avaliacaoMedia, s.passageiro.totalAvaliacoes)} ★ · ${contar(s.passageiro.totalAvaliacoes, 'avaliação', 'avaliações')}`
                     : 'Sem avaliações ainda'}
                 </Text>
               </View>

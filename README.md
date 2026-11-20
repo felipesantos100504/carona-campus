@@ -63,7 +63,7 @@ O projeto do Firebase já está criado (`carona-campus-84abe`). Para recriar em 
 2. **Authentication → Sign-in method:** ative **E-mail/senha** e **Google**.
 3. **Firestore Database:** crie o banco em `southamerica-east1` (São Paulo), modo de produção.
 4. **Firestore Database → Regras:** cole o conteúdo de [`firestore.rules`](firestore.rules) e publique (ou use `npx firebase deploy --only firestore:rules`).
-5. **AI Logic:** clique em "Começar" e escolha **Gemini Developer API**.
+5. **Gemini:** crie uma chave em [aistudio.google.com/apikey](https://aistudio.google.com/apikey), escolhendo o projeto do Firebase, e coloque em `EXPO_PUBLIC_GEMINI_API_KEY` no `.env`. (O Firebase AI Logic também foi ativado, mas neste projeto a configuração do provedor não foi concluída pelo console; ver ADR-0007.)
 
 ### Variáveis de ambiente
 
@@ -78,9 +78,10 @@ Ficam no arquivo `.env` (fora do Git); o modelo comentado é o [`.env.example`](
 | `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Id numérico do projeto |
 | `EXPO_PUBLIC_FIREBASE_APP_ID` | Id do app Web registrado no console |
 | `EXPO_PUBLIC_GEMINI_MODEL` | Modelo do Gemini usado na publicação (padrão `gemini-3.5-flash-lite`) |
+| `EXPO_PUBLIC_GEMINI_API_KEY` | **Secreta.** Chave da Gemini API criada no [Google AI Studio](https://aistudio.google.com/apikey). Fica só no `.env` de cada pessoa; o grupo compartilha por mensagem privada, nunca pelo GitHub. Sem ela, a publicação usa a extração por regras |
 | `EXPO_PUBLIC_USAR_EMULADOR` | Opcional. `1` conecta o app aos emuladores locais (desenvolvimento) |
 
-Os valores do Firebase **não são segredos**: eles identificam o projeto, e quem protege os dados são as regras do Firestore. A chave do Gemini fica no Firebase AI Logic, não no app.
+Os valores do Firebase **não são segredos**: eles identificam o projeto, e quem protege os dados são as regras do Firestore. A **chave do Gemini é secreta**: ela fica só no `.env`, que está no `.gitignore`, e é restrita à Gemini API no Google Cloud (ver ADR-0007).
 
 ### Scripts
 

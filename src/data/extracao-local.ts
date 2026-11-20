@@ -1,4 +1,4 @@
-import { CIDADES, normalizar } from './cidades';
+import { APELIDOS, CIDADES, normalizar } from './cidades';
 import type { ViagemExtraida } from './ia';
 
 // Extração por regras (sem IA), usada como plano B quando o Gemini falha ou
@@ -25,8 +25,15 @@ export function extrairViagemLocal(texto: string): Omit<ViagemExtraida, 'fonte'>
   const t = normalizar(texto);
 
   // Cidades na ordem em que aparecem no texto, com a palavra que vem antes.
-  const cidades = CIDADES.map((nome) => ({ nome, pos: t.indexOf(normalizar(nome)) }))
-    .filter((c) => c.pos !== -1)
+  const encontradas = CIDADES.map((nome) => ({ nome, pos: t.indexOf(normalizar(nome)) })).filter((c) => c.pos !== -1);
+  // Apelidos ("São Jorge", "Beltrão") só valem se o nome completo não apareceu.
+  for (const [apelido, nome] of Object.entries(APELIDOS)) {
+    const pos = t.search(new RegExp(`\\b${apelido}\\b`));
+    if (pos !== -1 && !encontradas.some((c) => c.nome === nome || (pos >= c.pos && pos < c.pos + normalizar(c.nome).length))) {
+      encontradas.push({ nome, pos });
+    }
+  }
+  const cidades = encontradas
     .sort((a, b) => a.pos - b.pos)
     .map((c) => ({ nome: c.nome, antes: t.slice(Math.max(0, c.pos - 20), c.pos) }));
 
@@ -85,6 +92,16 @@ function extrairData(t: string): { data?: string; diasSemana?: number[] } {
   const hoje = new Date();
   if (/\bamanha\b/.test(t)) return { data: paraISO(somarDias(hoje, 1)) };
   if (/\bhoje\b/.test(t)) return { data: paraISO(hoje) };
+
+  // "todos os dias" e "de segunda a sexta": recorrência com a próxima saída amanhã.
+  if (/\btodos os dias\b|\btodo dia\b|\bdiariamente\b/.test(t)) {
+    return { data: paraISO(somarDias(hoje, 1)), diasSemana: [0, 1, 2, 3, 4, 5, 6] };
+  }
+  if (/\b(de )?segunda a sexta\b|\bdias uteis\b/.test(t)) {
+    const amanha = somarDias(hoje, 1);
+    const ate = (amanha.getDay() + 7 - 1) % 7 < 5 ? 0 : (8 - amanha.getDay()) % 7;
+    return { data: paraISO(somarDias(amanha, ate)), diasSemana: [1, 2, 3, 4, 5] };
+  }
 
   const recorrente = /\b(toda|todo|todas|todos)\b/.test(t);
   const dias = Object.entries(DIAS)

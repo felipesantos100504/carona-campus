@@ -261,7 +261,7 @@ Difícil de mudar depois: as regras dependem do campo `email_verified` do token;
 ## ADR-0007 — IA com Firebase AI Logic, resposta estruturada e plano B por regras
 
 - **Data:** 2026-11-15
-- **Situação:** Aceita
+- **Situação:** Aceita; revisada em 2026-11-19 (ver "Revisão" no fim deste ADR)
 - **Quem decidiu:** Equipe de Desenvolvimento
 
 ### Contexto
@@ -293,6 +293,14 @@ Positivas: a publicação funciona mesmo com a API fora do ar; a busca não usa 
 Negativas assumidas: o plano B reconhece só as cidades do catálogo e padrões simples ("pra X", "passo por Y", "18h", "R$ 90"); o plano gratuito tem limite de requisições por minuto.
 
 Difícil de mudar depois: trocar de provedor de IA exige reescrever `src/data/ia.ts`, mas o formato `ViagemExtraida` usado pela tela de publicação continua o mesmo.
+
+### Revisão (2026-11-19): chamada direta à Gemini API com chave do AI Studio
+
+O Firebase AI Logic foi ativado no console (Firebase AI Logic API e Gemini API ativas), mas a configuração do provedor não foi criada: toda chamada respondia "Firebase AI Logic genai config not found", mesmo quatro dias depois, e o console não oferece como recriá-la. O App Check foi descartado como causa (a exigência para o AI Logic só começa em 21/01/2027).
+
+Decisão: quando `EXPO_PUBLIC_GEMINI_API_KEY` está no `.env`, o app chama a Gemini API diretamente (`generativelanguage.googleapis.com`) com uma chave criada no Google AI Studio para o mesmo projeto, mantendo a saída estruturada, a validação e o plano B por regras. Sem a chave, o app continua tentando o AI Logic.
+
+Risco assumido: a chave vai dentro do app compilado e pode ser extraída por quem inspecionar o app. Mitigações: a chave fica só no `.env` (fora do Git), é restrita à Gemini API no Google Cloud, o projeto está no plano gratuito (sem cobrança, apenas limite de uso) e a chave pode ser revogada e trocada a qualquer momento. Para uma versão publicada, o caminho correto é o AI Logic com App Check ou uma função no servidor.
 
 ---
 
@@ -343,7 +351,7 @@ Com o Firestore, era preciso implementar o fluxo pedido → confirmação (RF-07
 - **Ids previsíveis:** a reserva usa o id `{caronaId}_{passageiroId}` e a avaliação `{reservaId}_{autorId}`. Isso impede pedidos e notas duplicados e permite que as regras encontrem a reserva de quem está pedindo.
 - **Transações + regras:** o motorista confirma o pedido numa transação que desconta uma vaga; as regras (`firestore.rules`) só aceitam a confirmação se a mesma operação descontar exatamente uma vaga, e só deixam o passageiro devolver uma vaga se, na mesma operação, a reserva dele passar de confirmada para cancelada. Quando a carona lota, os pedidos pendentes são recusados com o motivo "lotada" (RF-15).
 - **Busca sem índice composto:** cada carona grava `validaAte` (a data da viagem única, ou uma data distante para as recorrentes) e o `trajeto` normalizado. A busca consulta `validaAte >= agora` e aplica os filtros de trajeto, parada e data no app, por regras programadas (RNF-06).
-- **Avaliações:** a média e o total de notas são calculados por consultas de agregação no servidor (`average` e `count`), em vez de gravar a média no perfil de outra pessoa.
+- **Avaliações:** a média e o total de notas são calculados a partir das notas recebidas (`avaliacoes` onde `avaliadoId` é a pessoa), em vez de gravar a média no perfil de outra pessoa. A agregação `average()` no servidor foi testada, mas exige um índice composto no banco real; com poucas notas por pessoa, calcular no app evita esse índice. O total de caronas oferecidas usa `count()` no servidor.
 - **Avisos no app:** em vez de notificação push, a aba Viagens mostra em tempo real (`onSnapshot`) o número de pedidos aguardando o motorista, e o passageiro vê a situação do pedido na reserva.
 - **Testes:** as regras são testadas no emulador do Firestore (`npm run test:regras`, 25 casos).
 

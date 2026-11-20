@@ -130,38 +130,42 @@ function CartaoReserva({ item }: { item: ReservaDetalhada }) {
       : STATUS[reserva.status];
   const avaliavel = podeAvaliar(reserva, carona);
 
+  // O botão "Avaliar" fica fora da área tocável do cartão (botão dentro de
+  // botão quebra a versão web).
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Reserva de ${carona.origem} para ${carona.destino}`}
-      onPress={() => abrirCarona(carona.id)}
-      style={({ pressed }) => [styles.cartao, pressed && styles.pressionado]}>
-      <View style={styles.linha}>
-        <View style={styles.trajeto}>
-          <View style={[styles.ponto, { backgroundColor: status.cor }]} />
-          <Text style={styles.cidades} numberOfLines={1}>
-            {carona.origem} → {carona.destino}
-          </Text>
+    <View style={styles.cartao}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Reserva de ${carona.origem} para ${carona.destino}`}
+        onPress={() => abrirCarona(carona.id)}
+        style={({ pressed }) => [styles.areaToque, pressed && styles.pressionado]}>
+        <View style={styles.linha}>
+          <View style={styles.trajeto}>
+            <View style={[styles.ponto, { backgroundColor: status.cor }]} />
+            <Text style={styles.cidades} numberOfLines={1}>
+              {carona.origem} → {carona.destino}
+            </Text>
+          </View>
+          <Selo rotulo={status.rotulo} tom={status.tom} />
         </View>
-        <Selo rotulo={status.rotulo} tom={status.tom} />
-      </View>
-      <Text style={styles.legenda}>
-        {formatarData(carona.dataHora)} às {formatarHora(carona.dataHora)}
-      </Text>
+        <Text style={styles.legenda}>
+          {formatarData(carona.dataHora)} às {formatarHora(carona.dataHora)}
+        </Text>
 
-      <View style={styles.caixa}>
-        <Avatar nome={motorista.nome} fotoUri={motorista.fotoUri} tamanho={36} verificado />
-        <View style={styles.flex}>
-          <Text style={styles.nome} numberOfLines={1}>
-            {motorista.nome}
-          </Text>
-          <Text style={styles.legenda}>Motorista verificado</Text>
+        <View style={styles.caixa}>
+          <Avatar nome={motorista.nome} fotoUri={motorista.fotoUri} tamanho={36} verificado />
+          <View style={styles.flex}>
+            <Text style={styles.nome} numberOfLines={1}>
+              {motorista.nome}
+            </Text>
+            <Text style={styles.legenda}>Motorista verificado</Text>
+          </View>
+          <View style={styles.direita}>
+            <Text style={styles.legenda}>Contribuição</Text>
+            <Text style={styles.valorPequeno}>{formatarMoeda(carona.valorPorVaga)}</Text>
+          </View>
         </View>
-        <View style={styles.direita}>
-          <Text style={styles.legenda}>Contribuição</Text>
-          <Text style={styles.valorPequeno}>{formatarMoeda(carona.valorPorVaga)}</Text>
-        </View>
-      </View>
+      </Pressable>
 
       {avaliavel ? (
         <View style={styles.linha}>
@@ -180,7 +184,7 @@ function CartaoReserva({ item }: { item: ReservaDetalhada }) {
           {reserva.avaliacao === 1 ? 'estrela' : 'estrelas'}.
         </Text>
       ) : null}
-    </Pressable>
+    </View>
   );
 }
 
@@ -268,6 +272,7 @@ const styles = StyleSheet.create({
     ...sombra.cartao,
   },
   pressionado: { opacity: 0.92 },
+  areaToque: { gap: espaco.sm + 4 },
   linha: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: espaco.sm },
   trajeto: { flexDirection: 'row', alignItems: 'center', gap: espaco.sm, flexShrink: 1 },
   ponto: { width: 8, height: 8, borderRadius: 4 },

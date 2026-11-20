@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ComponentProps } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 import { alturaToque, cores, espaco, raio, tipografia } from '@/theme';
 
@@ -17,6 +17,11 @@ type Props = {
   desabilitado?: boolean;
   /** Botão compacto, para ações dentro de cartões. */
   pequeno?: boolean;
+  /**
+   * Só a aparência de botão, sem toque próprio: para usar dentro de um cartão
+   * que já é tocável (botão dentro de botão quebra a versão web).
+   */
+  decorativo?: boolean;
   estilo?: ViewStyle;
 };
 
@@ -28,10 +33,20 @@ export function Botao({
   carregando = false,
   desabilitado = false,
   pequeno = false,
+  decorativo = false,
   estilo,
 }: Props) {
   const bloqueado = desabilitado || carregando;
   const corTexto = corDoTexto[variante];
+
+  if (decorativo) {
+    return (
+      <View style={[styles.base, pequeno && styles.pequeno, estilos[variante], estilo]}>
+        {icone ? <Ionicons name={icone} size={pequeno ? 16 : 20} color={corTexto} /> : null}
+        <Text style={[pequeno ? styles.textoPequeno : styles.texto, { color: corTexto }]}>{titulo}</Text>
+      </View>
+    );
+  }
 
   return (
     <Pressable

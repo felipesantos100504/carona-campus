@@ -18,6 +18,7 @@ import { Usuario } from '@/data/tipos';
 import { useCarregamento } from '@/hooks/use-carregamento';
 import { cores, espaco, raio, tipografia } from '@/theme';
 import { escolherFoto } from '@/utils/foto';
+import { contar, formatarNota } from '@/utils/formato';
 
 export default function Perfil() {
   const perfil = useCarregamento(obterMeuPerfil);
@@ -122,14 +123,14 @@ export default function Perfil() {
           <View style={styles.numeros}>
             <View style={styles.numero}>
               <Text style={styles.valor}>
-                {usuario.avaliacaoMedia.toFixed(1)} <Ionicons name="star" size={18} color={cores.estrela} />
+                {formatarNota(usuario.avaliacaoMedia, usuario.totalAvaliacoes)} <Ionicons name="star" size={18} color={cores.estrela} />
               </Text>
-              <Text style={styles.legenda}>{usuario.totalAvaliacoes} avaliações</Text>
+              <Text style={styles.legenda}>{contar(usuario.totalAvaliacoes, 'avaliação', 'avaliações')}</Text>
             </View>
             <View style={styles.divisor} />
             <View style={styles.numero}>
               <Text style={styles.valor}>{usuario.totalViagens}</Text>
-              <Text style={styles.legenda}>caronas oferecidas</Text>
+              <Text style={styles.legenda}>{usuario.totalViagens === 1 ? 'carona oferecida' : 'caronas oferecidas'}</Text>
             </View>
           </View>
           {erroFoto ? <Aviso tipo="erro">{erroFoto}</Aviso> : null}

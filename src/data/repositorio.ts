@@ -2,7 +2,6 @@ import * as Network from 'expo-network';
 import { FirebaseError } from 'firebase/app';
 import {
   addDoc,
-  average,
   collection,
   count,
   doc,
@@ -226,12 +225,12 @@ async function lerUsuario(id: string): Promise<Usuario | null> {
   const snap = await getDoc(doc(db, 'usuarios', id));
   if (!snap.exists()) return null;
   const d = snap.data();
-  // A média e os totais são calculados no servidor (consultas de agregação).
-  const [avaliacoes, caronas] = await Promise.all([
-    getAggregateFromServer(query(collection(db, 'avaliacoes'), where('avaliadoId', '==', id)), {
-      media: average('nota'),
-      total: count(),
-    }).catch(() => null),
+  // A média vem das notas recebidas (a agregação average() no servidor exigiria
+  // um índice composto); o total de caronas usa a contagem do servidor.
+  const [notas, caronas] = await Promise.all([
+    getDocs(query(collection(db, 'avaliacoes'), where('avaliadoId', '==', id)))
+      .then((r) => r.docs.map((a) => a.data().nota as number))
+      .catch(() => [] as number[]),
     getAggregateFromServer(query(collection(db, 'caronas'), where('motoristaId', '==', id)), {
       total: count(),
     }).catch(() => null),
@@ -243,8 +242,8 @@ async function lerUsuario(id: string): Promise<Usuario | null> {
     bio: d.bio,
     fotoUri: d.fotoUri,
     membroDesde: d.membroDesde,
-    avaliacaoMedia: avaliacoes?.data().media ?? 0,
-    totalAvaliacoes: avaliacoes?.data().total ?? 0,
+    avaliacaoMedia: notas.length ? notas.reduce((soma, n) => soma + n, 0) / notas.length : 0,
+    totalAvaliacoes: notas.length,
     totalViagens: caronas?.data().total ?? 0,
   };
 }

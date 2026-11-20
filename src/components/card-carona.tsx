@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Carona, Usuario } from '@/data/tipos';
 import { cores, espaco, raio, sombra, tipografia } from '@/theme';
-import { formatarData, formatarDiasSemana, formatarHora, formatarMoeda } from '@/utils/formato';
+import { contar, formatarData, formatarDiasSemana, formatarHora, formatarMoeda, formatarNota } from '@/utils/formato';
 
 import { Avatar } from './avatar';
 import { Botao } from './botao';
@@ -85,11 +85,13 @@ export function CardCarona({ carona, motorista, onPress }: Props) {
               {motorista.nome}
             </Text>
             <Text style={styles.nota}>
-              <Ionicons name="star" size={12} color={cores.estrela} /> {motorista.avaliacaoMedia.toFixed(1)} ·{' '}
-              {motorista.totalViagens} viagens
+              <Ionicons name="star" size={12} color={cores.estrela} />{' '}
+              {formatarNota(motorista.avaliacaoMedia, motorista.totalAvaliacoes)} ·{' '}
+              {contar(motorista.totalViagens, 'carona', 'caronas')}
             </Text>
           </View>
-          {onPress ? <Botao titulo="Ver detalhes" variante="verde" pequeno onPress={onPress} /> : null}
+          {/* O cartão inteiro já é tocável; o botão aqui é só visual. */}
+          {onPress ? <Botao titulo="Ver detalhes" variante="verde" pequeno decorativo /> : null}
         </View>
       ) : null}
     </Pressable>

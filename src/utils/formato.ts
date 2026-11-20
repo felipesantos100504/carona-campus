@@ -59,3 +59,13 @@ export function hojeISO(somarDias = 0) {
 export function jaPassou(iso: string) {
   return new Date(iso).getTime() < Date.now();
 }
+
+/** "1 avaliação", "3 avaliações". */
+export function contar(quantidade: number, singular: string, plural: string) {
+  return `${quantidade} ${quantidade === 1 ? singular : plural}`;
+}
+
+/** Nota média com uma casa decimal, ou "Novo" para quem ainda não foi avaliado. */
+export function formatarNota(media: number, total: number) {
+  return total > 0 ? media.toFixed(1).replace('.', ',') : 'Novo';
+}
