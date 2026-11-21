@@ -67,8 +67,10 @@ export default function Buscar() {
     setAvisoIA(null);
     try {
       const b = await interpretarBusca(pedido);
-      const novaOrigem = b.origem ?? origem;
-      const novoDestino = b.destino ?? destino;
+      // Cada pedido substitui a busca anterior: o que ele não informa fica vazio
+      // (antes sobravam cidades de buscas passadas, como "Ponta Grossa → Ponta Grossa").
+      const novaOrigem = b.origem ?? '';
+      const novoDestino = b.destino ?? '';
       setOrigem(novaOrigem);
       setDestino(novoDestino);
       setData(b.data ?? '');
