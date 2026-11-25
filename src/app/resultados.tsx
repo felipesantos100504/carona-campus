@@ -21,6 +21,7 @@ export default function Resultados() {
     data = '',
     horario = '',
     ponto = '',
+    chegada = '',
     via = '',
   } = useLocalSearchParams<{
     origem?: string;
@@ -28,6 +29,7 @@ export default function Resultados() {
     data?: string;
     horario?: string;
     ponto?: string;
+    chegada?: string;
     /** "ia" ou "regras" quando a busca veio do texto livre do passageiro. */
     via?: string;
   }>();
@@ -40,8 +42,9 @@ export default function Resultados() {
         data: data || undefined,
         horario: horario || undefined,
         pontoEmbarque: ponto || undefined,
+        pontoChegada: chegada || undefined,
       }),
-    [origem, destino, data, horario, ponto],
+    [origem, destino, data, horario, ponto, chegada],
   );
 
   function conteudo() {
@@ -55,8 +58,8 @@ export default function Resultados() {
           titulo="Nenhuma carona encontrada"
           mensagem={
             horario
-              ? `Nenhuma viagem passa por essas cidades perto das ${horario}. Tente outro horário ou outra data.`
-              : 'Nenhuma viagem passa por essas cidades na data escolhida. Tente outra data.'
+              ? `Nenhuma viagem passa por esses lugares perto das ${horario}. Tente outro horário ou outra data.`
+              : 'Nenhuma viagem passa por esses lugares na data escolhida. Tente outra data.'
           }
           acao={{ titulo: 'Alterar busca', icone: 'calendar-outline', onPress: () => router.back() }}
         />
@@ -80,7 +83,7 @@ export default function Resultados() {
               <Aviso tipo={via === 'ia' ? 'sucesso' : 'info'} icone="sparkles-outline">
                 {via === 'ia'
                   ? 'Busca interpretada pela IA. Toque no lápis para ajustar.'
-                  : 'IA indisponível: a busca foi montada pelas regras do app. Confira as cidades.'}
+                  : 'IA indisponível: a busca foi montada pelas regras do app. Confira as cidades e os lugares.'}
               </Aviso>
             ) : null}
             <View style={styles.resumo}>
@@ -88,9 +91,16 @@ export default function Resultados() {
                 <View style={styles.trajeto}>
                   <View style={styles.ponto} />
                   <Text style={styles.cidades} numberOfLines={1}>
-                    {origem || 'Qualquer origem'} → {destino || 'qualquer destino'}
+                    {ponto || origem || 'Qualquer origem'} → {chegada || destino || 'qualquer destino'}
                   </Text>
                 </View>
+                {ponto || chegada ? (
+                  <Text style={styles.data} numberOfLines={1}>
+                    {origem && destino && origem === destino
+                      ? `Dentro de ${origem}`
+                      : `${origem || 'Qualquer cidade'} → ${destino || 'qualquer cidade'}`}
+                  </Text>
+                ) : null}
                 <View style={styles.linha}>
                   <Ionicons name="calendar-outline" size={14} color={cores.textoSecundario} />
                   <Text style={styles.data}>
@@ -114,8 +124,10 @@ export default function Resultados() {
                 <Ionicons name="pencil" size={18} color={cores.primaria} />
               </Pressable>
             </View>
-            {ponto ? (
-              <Aviso icone="flag-outline">Caronas que saem de &quot;{ponto}&quot; aparecem primeiro.</Aviso>
+            {ponto || chegada ? (
+              <Aviso icone="flag-outline">
+                {`Caronas que passam por ${[ponto, chegada].filter(Boolean).map((x) => `"${x}"`).join(' e ')} aparecem primeiro.`}
+              </Aviso>
             ) : null}
           </View>
         }

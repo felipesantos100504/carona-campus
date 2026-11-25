@@ -1,47 +1,53 @@
 {
   "_sobre": "Estrutura do Cloud Firestore do Carona Campus, exportada a partir dos itens cadastrados. Cada coleção é um objeto { idDoDocumento: campos }. Contém só os dados de demonstração (scripts/dados-exemplo.mjs). Regras de acesso em firestore.rules.",
-  "_exportadoEm": "2026-11-20T21:42:57.501Z",
+  "_exportadoEm": "2026-11-25T02:20:17.084Z",
   "usuarios": {
     "demo-beatriz": {
       "nome": "Beatriz Lima",
       "cidade": "Curitiba",
       "fotoUri": "data:image/png;base64,iVBORw0KGgoAAAANSU… (foto em base64, 1 KB)",
-      "membroDesde": "2026-11-20T21:42:46.098Z"
+      "membroDesde": "2026-11-25T02:20:10.185Z"
+    },
+    "demo-bruna": {
+      "nome": "Bruna Tessaro",
+      "cidade": "Dois Vizinhos",
+      "bio": "Estudo na UTFPR e volto para o centro depois da aula.",
+      "membroDesde": "2026-11-25T02:20:10.185Z"
     },
     "demo-camila": {
       "nome": "Camila Silveira",
       "cidade": "Pato Branco",
       "bio": "Engenharia Ambiental. Viajo para Curitiba quase toda sexta.",
-      "membroDesde": "2026-11-20T21:42:46.098Z"
+      "membroDesde": "2026-11-25T02:20:10.185Z"
     },
     "demo-gabriel": {
       "nome": "Gabriel Moretti",
       "cidade": "Guarapuava",
       "bio": "Carro com ar-condicionado, sem fumantes.",
-      "membroDesde": "2026-11-20T21:42:46.098Z"
+      "membroDesde": "2026-11-25T02:20:10.185Z"
     },
     "demo-lucas": {
       "nome": "Lucas Andrade",
       "cidade": "Francisco Beltrão",
       "bio": "Trabalho em Pato Branco e volto para casa todo dia.",
-      "membroDesde": "2026-11-20T21:42:46.098Z"
+      "membroDesde": "2026-11-25T02:20:10.185Z"
     },
     "demo-mariana": {
       "nome": "Mariana Costa",
       "cidade": "Cascavel",
-      "membroDesde": "2026-11-20T21:42:46.098Z"
+      "membroDesde": "2026-11-25T02:20:10.185Z"
     },
     "demo-motorista": {
       "nome": "Rafael Moreira",
       "cidade": "Quedas do Iguaçu",
-      "bio": "Motorista da demonstração. Vou para Cascavel todo dia útil.",
-      "membroDesde": "2026-11-20T21:42:46.098Z"
+      "bio": "Motorista da demonstração. Vou para Cascavel e dou carona até a UTFPR em Dois Vizinhos.",
+      "membroDesde": "2026-11-25T02:20:10.185Z"
     },
     "demo-passageiro": {
       "nome": "Júlia Andrade",
       "cidade": "Quedas do Iguaçu",
       "bio": "Passageira da demonstração. Estudo em Cascavel.",
-      "membroDesde": "2026-11-20T21:42:46.098Z"
+      "membroDesde": "2026-11-25T02:20:10.185Z"
     }
   },
   "caronas": {
@@ -72,7 +78,7 @@
         ]
       },
       "textoOriginal": "saio de Pato Branco toda sexta às 18h pra Curitiba, passo por Guarapuava e Ponta Grossa, 3 vagas, R$ 90",
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-c2": {
       "motoristaId": "demo-lucas",
@@ -84,7 +90,7 @@
         "pato branco",
         "francisco beltrao"
       ],
-      "primeiraSaida": "2026-11-21T21:30:00.000Z",
+      "primeiraSaida": "2026-11-25T21:30:00.000Z",
       "validaAte": "9999-12-31T23:59:59.999Z",
       "vagasTotais": 4,
       "vagasDisponiveis": 4,
@@ -98,7 +104,7 @@
           5
         ]
       },
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-c3": {
       "motoristaId": "demo-mariana",
@@ -112,12 +118,12 @@
         "medianeira",
         "foz do iguacu"
       ],
-      "primeiraSaida": "2026-11-22T10:30:00.000Z",
-      "validaAte": "2026-11-22T10:30:00.000Z",
+      "primeiraSaida": "2026-11-26T10:30:00.000Z",
+      "validaAte": "2026-11-26T10:30:00.000Z",
       "vagasTotais": 3,
       "vagasDisponiveis": 3,
       "valorPorVaga": 40,
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-c4": {
       "motoristaId": "demo-gabriel",
@@ -128,12 +134,12 @@
         "guarapuava",
         "ponta grossa"
       ],
-      "primeiraSaida": "2026-11-21T17:00:00.000Z",
-      "validaAte": "2026-11-21T17:00:00.000Z",
+      "primeiraSaida": "2026-11-25T17:00:00.000Z",
+      "validaAte": "2026-11-25T17:00:00.000Z",
       "vagasTotais": 1,
       "vagasDisponiveis": 0,
       "valorPorVaga": 50,
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-c5": {
       "motoristaId": "demo-beatriz",
@@ -149,7 +155,7 @@
         "guarapuava",
         "pato branco"
       ],
-      "primeiraSaida": "2026-11-22T12:00:00.000Z",
+      "primeiraSaida": "2026-11-29T12:00:00.000Z",
       "validaAte": "9999-12-31T23:59:59.999Z",
       "vagasTotais": 4,
       "vagasDisponiveis": 4,
@@ -160,7 +166,7 @@
           0
         ]
       },
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-c6": {
       "motoristaId": "demo-gabriel",
@@ -174,12 +180,12 @@
         "ponta grossa",
         "curitiba"
       ],
-      "primeiraSaida": "2026-11-23T20:30:00.000Z",
-      "validaAte": "2026-11-23T20:30:00.000Z",
+      "primeiraSaida": "2026-11-27T20:30:00.000Z",
+      "validaAte": "2026-11-27T20:30:00.000Z",
       "vagasTotais": 3,
       "vagasDisponiveis": 3,
       "valorPorVaga": 70,
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-c7": {
       "motoristaId": "demo-camila",
@@ -193,12 +199,85 @@
         "ponta grossa",
         "pato branco"
       ],
-      "primeiraSaida": "2026-11-15T12:00:00.000Z",
-      "validaAte": "2026-11-15T12:00:00.000Z",
+      "primeiraSaida": "2026-11-19T12:00:00.000Z",
+      "validaAte": "2026-11-19T12:00:00.000Z",
       "vagasTotais": 3,
       "vagasDisponiveis": 1,
       "valorPorVaga": 90,
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "criadaEm": "2026-11-25T02:20:10.185Z"
+    },
+    "demo-c8": {
+      "motoristaId": "demo-bruna",
+      "origem": "Dois Vizinhos",
+      "destino": "Dois Vizinhos",
+      "paradas": [],
+      "pontoEmbarque": "UTFPR",
+      "pontos": [
+        {
+          "nome": "Posto Stop",
+          "cidade": "Dois Vizinhos"
+        },
+        {
+          "nome": "Mercado Ítalo",
+          "cidade": "Dois Vizinhos"
+        },
+        {
+          "nome": "Posto Fênix",
+          "cidade": "Dois Vizinhos"
+        }
+      ],
+      "trajeto": [
+        "dois vizinhos",
+        "dois vizinhos"
+      ],
+      "primeiraSaida": "2026-11-26T01:40:00.000Z",
+      "validaAte": "9999-12-31T23:59:59.999Z",
+      "vagasTotais": 2,
+      "vagasDisponiveis": 2,
+      "valorPorVaga": 5,
+      "observacoes": "Saio logo depois da última aula.",
+      "recorrencia": {
+        "diasSemana": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "criadaEm": "2026-11-25T02:20:10.185Z"
+    },
+    "demo-c9": {
+      "motoristaId": "demo-lucas",
+      "origem": "Francisco Beltrão",
+      "destino": "Dois Vizinhos",
+      "paradas": [],
+      "pontoEmbarque": "Rodoviária",
+      "pontos": [
+        {
+          "nome": "UTFPR",
+          "cidade": "Dois Vizinhos"
+        }
+      ],
+      "trajeto": [
+        "francisco beltrao",
+        "dois vizinhos"
+      ],
+      "primeiraSaida": "2026-11-25T20:40:00.000Z",
+      "validaAte": "9999-12-31T23:59:59.999Z",
+      "vagasTotais": 4,
+      "vagasDisponiveis": 4,
+      "valorPorVaga": 15,
+      "recorrencia": {
+        "diasSemana": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-m1": {
       "motoristaId": "demo-motorista",
@@ -213,7 +292,7 @@
         "catanduvas",
         "cascavel"
       ],
-      "primeiraSaida": "2026-11-21T10:00:00.000Z",
+      "primeiraSaida": "2026-11-25T10:00:00.000Z",
       "validaAte": "9999-12-31T23:59:59.999Z",
       "vagasTotais": 3,
       "vagasDisponiveis": 3,
@@ -229,7 +308,7 @@
         ]
       },
       "textoOriginal": "saio do Posto Fênix em Quedas do Iguaçu de segunda a sexta às 7h pra Cascavel, passo por Catanduvas, 3 vagas, R$ 35",
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-m2": {
       "motoristaId": "demo-motorista",
@@ -254,7 +333,7 @@
           5
         ]
       },
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-m3": {
       "motoristaId": "demo-motorista",
@@ -266,12 +345,53 @@
         "quedas do iguacu",
         "cascavel"
       ],
-      "primeiraSaida": "2026-11-17T10:00:00.000Z",
-      "validaAte": "2026-11-17T10:00:00.000Z",
+      "primeiraSaida": "2026-11-21T10:00:00.000Z",
+      "validaAte": "2026-11-21T10:00:00.000Z",
       "vagasTotais": 3,
       "vagasDisponiveis": 2,
       "valorPorVaga": 35,
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "criadaEm": "2026-11-25T02:20:10.185Z"
+    },
+    "demo-m4": {
+      "motoristaId": "demo-motorista",
+      "origem": "Dois Vizinhos",
+      "destino": "Dois Vizinhos",
+      "paradas": [],
+      "pontoEmbarque": "Posto Fênix",
+      "pontos": [
+        {
+          "nome": "Mercado Ítalo",
+          "cidade": "Dois Vizinhos"
+        },
+        {
+          "nome": "Posto Stop",
+          "cidade": "Dois Vizinhos"
+        },
+        {
+          "nome": "UTFPR",
+          "cidade": "Dois Vizinhos"
+        }
+      ],
+      "trajeto": [
+        "dois vizinhos",
+        "dois vizinhos"
+      ],
+      "primeiraSaida": "2026-11-25T21:30:00.000Z",
+      "validaAte": "9999-12-31T23:59:59.999Z",
+      "vagasTotais": 3,
+      "vagasDisponiveis": 3,
+      "valorPorVaga": 5,
+      "recorrencia": {
+        "diasSemana": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "textoOriginal": "saio do Posto Fênix de segunda a sexta às 18h30, passo no Mercado Ítalo e no Posto Stop até a UTFPR, 3 vagas, R$ 5",
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     }
   },
   "reservas": {
@@ -280,39 +400,39 @@
       "passageiroId": "demo-gabriel",
       "motoristaId": "demo-camila",
       "status": "cancelada",
-      "canceladaEm": "2026-11-20T21:42:46.098Z",
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "canceladaEm": "2026-11-25T02:20:10.185Z",
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-c1_demo-lucas": {
       "caronaId": "demo-c1",
       "passageiroId": "demo-lucas",
       "motoristaId": "demo-camila",
       "status": "confirmada",
-      "respondidaEm": "2026-11-20T21:42:46.098Z",
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "respondidaEm": "2026-11-25T02:20:10.185Z",
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-c1_demo-mariana": {
       "caronaId": "demo-c1",
       "passageiroId": "demo-mariana",
       "motoristaId": "demo-camila",
       "status": "pendente",
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-c3_demo-lucas": {
       "caronaId": "demo-c3",
       "passageiroId": "demo-lucas",
       "motoristaId": "demo-mariana",
       "status": "recusada",
-      "respondidaEm": "2026-11-20T21:42:46.098Z",
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "respondidaEm": "2026-11-25T02:20:10.185Z",
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-c4_demo-beatriz": {
       "caronaId": "demo-c4",
       "passageiroId": "demo-beatriz",
       "motoristaId": "demo-gabriel",
       "status": "confirmada",
-      "respondidaEm": "2026-11-20T21:42:46.098Z",
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "respondidaEm": "2026-11-25T02:20:10.185Z",
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-c4_demo-mariana": {
       "caronaId": "demo-c4",
@@ -320,39 +440,39 @@
       "motoristaId": "demo-gabriel",
       "status": "recusada",
       "motivo": "lotada",
-      "respondidaEm": "2026-11-20T21:42:46.098Z",
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "respondidaEm": "2026-11-25T02:20:10.185Z",
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-c7_demo-beatriz": {
       "caronaId": "demo-c7",
       "passageiroId": "demo-beatriz",
       "motoristaId": "demo-camila",
       "status": "confirmada",
-      "respondidaEm": "2026-11-20T21:42:46.098Z",
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "respondidaEm": "2026-11-25T02:20:10.185Z",
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-c7_demo-gabriel": {
       "caronaId": "demo-c7",
       "passageiroId": "demo-gabriel",
       "motoristaId": "demo-camila",
       "status": "confirmada",
-      "respondidaEm": "2026-11-20T21:42:46.098Z",
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "respondidaEm": "2026-11-25T02:20:10.185Z",
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-m1_demo-passageiro": {
       "caronaId": "demo-m1",
       "passageiroId": "demo-passageiro",
       "motoristaId": "demo-motorista",
       "status": "pendente",
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-m3_demo-passageiro": {
       "caronaId": "demo-m3",
       "passageiroId": "demo-passageiro",
       "motoristaId": "demo-motorista",
       "status": "confirmada",
-      "respondidaEm": "2026-11-20T21:42:46.098Z",
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "respondidaEm": "2026-11-25T02:20:10.185Z",
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     }
   },
   "avaliacoes": {
@@ -362,7 +482,7 @@
       "autorId": "demo-beatriz",
       "avaliadoId": "demo-camila",
       "nota": 5,
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-c7_demo-gabriel_demo-camila": {
       "reservaId": "demo-c7_demo-gabriel",
@@ -370,7 +490,7 @@
       "autorId": "demo-camila",
       "avaliadoId": "demo-gabriel",
       "nota": 4,
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     },
     "demo-c7_demo-gabriel_demo-gabriel": {
       "reservaId": "demo-c7_demo-gabriel",
@@ -378,7 +498,7 @@
       "autorId": "demo-gabriel",
       "avaliadoId": "demo-camila",
       "nota": 5,
-      "criadaEm": "2026-11-20T21:42:46.098Z"
+      "criadaEm": "2026-11-25T02:20:10.185Z"
     }
   }
 }

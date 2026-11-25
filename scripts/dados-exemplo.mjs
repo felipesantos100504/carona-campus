@@ -58,9 +58,14 @@ export const usuarios = [
   { id: 'demo-gabriel', email: 'gabriel@carona-campus.test', nome: 'Gabriel Moretti', cidade: 'Guarapuava', bio: 'Carro com ar-condicionado, sem fumantes.' },
   { id: 'demo-beatriz', email: 'beatriz@carona-campus.test', nome: 'Beatriz Lima', cidade: 'Curitiba', fotoUri: fotoExemplo([99, 102, 241], [5, 150, 105]) },
   // Contas principais para a apresentação e os testes:
-  { id: 'demo-motorista', email: 'motorista@carona-campus.test', nome: 'Rafael Moreira', cidade: 'Quedas do Iguaçu', bio: 'Motorista da demonstração. Vou para Cascavel todo dia útil.' },
+  { id: 'demo-motorista', email: 'motorista@carona-campus.test', nome: 'Rafael Moreira', cidade: 'Quedas do Iguaçu', bio: 'Motorista da demonstração. Vou para Cascavel e dou carona até a UTFPR em Dois Vizinhos.' },
   { id: 'demo-passageiro', email: 'passageiro@carona-campus.test', nome: 'Júlia Andrade', cidade: 'Quedas do Iguaçu', bio: 'Passageira da demonstração. Estudo em Cascavel.' },
+  // Caronas dentro de Dois Vizinhos, até a UTFPR (RF-20):
+  { id: 'demo-bruna', email: 'bruna@carona-campus.test', nome: 'Bruna Tessaro', cidade: 'Dois Vizinhos', bio: 'Estudo na UTFPR e volto para o centro depois da aula.' },
 ];
+
+// Lugares dentro de Dois Vizinhos (os mesmos do catálogo em src/data/cidades.ts).
+const DV = (nome) => ({ nome, cidade: 'Dois Vizinhos' });
 
 // As datas são calculadas no horário de Brasília (UTC-3), independentemente
 // do fuso do computador que roda o script.
@@ -97,6 +102,11 @@ export const caronas = [
   { id: 'demo-m2', motoristaId: 'demo-motorista', origem: 'Quedas do Iguaçu', destino: 'Dois Vizinhos', paradas: ["São Jorge d'Oeste"], pontoEmbarque: 'Rodoviária', primeiraSaida: proximo(5, 17), vagasTotais: 2, valorPorVaga: 40, diasSemana: [5] },
   // Viagem que já aconteceu, com o passageiro principal confirmado.
   { id: 'demo-m3', motoristaId: 'demo-motorista', origem: 'Quedas do Iguaçu', destino: 'Cascavel', paradas: [], pontoEmbarque: 'Posto Fênix', primeiraSaida: emDias(-3, 7), vagasTotais: 3, valorPorVaga: 35 },
+  // Dentro de Dois Vizinhos, passando por pontos conhecidos até a UTFPR (RF-20).
+  { id: 'demo-m4', motoristaId: 'demo-motorista', origem: 'Dois Vizinhos', destino: 'Dois Vizinhos', paradas: [], pontoEmbarque: 'Posto Fênix', pontos: [DV('Mercado Ítalo'), DV('Posto Stop'), DV('UTFPR')], primeiraSaida: emDias(1, 18, 30), vagasTotais: 3, valorPorVaga: 5, diasSemana: [1, 2, 3, 4, 5], textoOriginal: 'saio do Posto Fênix de segunda a sexta às 18h30, passo no Mercado Ítalo e no Posto Stop até a UTFPR, 3 vagas, R$ 5' },
+  { id: 'demo-c8', motoristaId: 'demo-bruna', origem: 'Dois Vizinhos', destino: 'Dois Vizinhos', paradas: [], pontoEmbarque: 'UTFPR', pontos: [DV('Posto Stop'), DV('Mercado Ítalo'), DV('Posto Fênix')], primeiraSaida: emDias(1, 22, 40), vagasTotais: 2, valorPorVaga: 5, diasSemana: [1, 2, 3, 4, 5], observacoes: 'Saio logo depois da última aula.' },
+  // Entre cidades, terminando num ponto conhecido: de Francisco Beltrão até a UTFPR.
+  { id: 'demo-c9', motoristaId: 'demo-lucas', origem: 'Francisco Beltrão', destino: 'Dois Vizinhos', paradas: [], pontoEmbarque: 'Rodoviária', pontos: [DV('UTFPR')], primeiraSaida: emDias(1, 17, 40), vagasTotais: 4, valorPorVaga: 15, diasSemana: [1, 2, 3, 4, 5] },
 ];
 
 // Pedidos de vaga: id = {caronaId}_{passageiroId}.

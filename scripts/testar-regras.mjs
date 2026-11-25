@@ -117,6 +117,29 @@ describe('caronas', () => {
     );
   });
 
+  test('aceita carona dentro da cidade com pontos e recusa mais de 10 pontos (RF-20)', async () => {
+    const ponto = (nome) => ({ nome, cidade: 'Dois Vizinhos' });
+    const dentroDaCidade = {
+      origem: 'Dois Vizinhos',
+      destino: 'Dois Vizinhos',
+      paradas: [],
+      trajeto: ['dois vizinhos', 'dois vizinhos'],
+      pontoEmbarque: 'Posto Fênix',
+    };
+    await assertSucceeds(
+      setDoc(
+        doc(verificado(ANA), 'caronas', CARONA),
+        caronaValida({ ...dentroDaCidade, pontos: [ponto('Mercado Ítalo'), ponto('Posto Stop'), ponto('UTFPR')] }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        doc(verificado(ANA), 'caronas', 'outra'),
+        caronaValida({ ...dentroDaCidade, pontos: Array.from({ length: 11 }, (_, i) => ponto(`Ponto ${i}`)) }),
+      ),
+    );
+  });
+
   test('passageiro não mexe no contador de vagas sem cancelar uma vaga', async () => {
     await preparar({ [`caronas/${CARONA}`]: caronaValida({ vagasDisponiveis: 2 }) });
     await assertFails(updateDoc(doc(verificado(BRUNO), 'caronas', CARONA), { vagasDisponiveis: 3 }));

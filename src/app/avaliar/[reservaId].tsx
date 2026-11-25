@@ -10,6 +10,7 @@ import { Botao } from '@/components/botao';
 import { EstadoCarregando, EstadoErro, EstadoVazio } from '@/components/estados';
 import { Selo } from '@/components/selo';
 import { avaliarViagem, obterViagemParaAvaliar } from '@/data/repositorio';
+import { rotuloRota } from '@/data/roteiro';
 import { useCarregamento } from '@/hooks/use-carregamento';
 import { cores, espaco, raio, tipografia } from '@/theme';
 import { formatarData } from '@/utils/formato';
@@ -81,7 +82,7 @@ export default function Avaliar() {
       <View style={styles.trajeto}>
         <View style={styles.ponto} />
         <Text style={styles.textoTrajeto} numberOfLines={1}>
-          {carona.origem} → {carona.destino} · {formatarData(carona.dataHora)}
+          {rotuloRota(carona)} · {formatarData(carona.dataHora)}
         </Text>
       </View>
 

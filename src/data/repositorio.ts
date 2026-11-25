@@ -22,11 +22,13 @@ import { gravar, ler } from './armazenamento';
 import { lerPerfilPendente, limparPerfilPendente, usuarioAtual } from './auth';
 import { normalizar } from './cidades';
 import { auth, db } from './firebase';
+import { atendeBusca } from './roteiro';
 import {
   Carona,
   CaronaComMotorista,
   FiltroBusca,
   NovaCarona,
+  Ponto,
   Reserva,
   ReservaDetalhada,
   Solicitacao,
@@ -171,6 +173,7 @@ function paraCarona(id: string, d: DocumentData, data?: string): Carona | null {
     destino: d.destino,
     paradas: d.paradas ?? [],
     pontoEmbarque: d.pontoEmbarque,
+    pontos: lerPontos(d.pontos),
     dataHora,
     primeiraSaida: d.primeiraSaida,
     vagasTotais: d.vagasTotais,
@@ -218,17 +221,12 @@ function pertoDoHorario(iso: string, horario: string) {
   return Math.abs(d.getHours() * 60 + d.getMinutes() - (h * 60 + m)) <= JANELA_HORARIO_MIN;
 }
 
-/** "posto fenix" e "posto fenix do centro" contam como o mesmo ponto. */
-function mesmoPonto(a: string, b: string) {
-  return a.includes(b) || b.includes(a);
-}
-
-/** A carona serve se passa pela origem e depois pelo destino buscados. */
-function atendeTrajeto(carona: Carona, origem?: string, destino?: string) {
-  const trajeto = [carona.origem, ...carona.paradas, carona.destino].map(normalizar);
-  const iOrigem = origem ? trajeto.indexOf(normalizar(origem)) : 0;
-  const iDestino = destino ? trajeto.lastIndexOf(normalizar(destino)) : trajeto.length - 1;
-  return iOrigem !== -1 && iDestino !== -1 && iOrigem < iDestino;
+/** Pontos gravados no documento, descartando itens fora do formato. */
+function lerPontos(valor: unknown): Ponto[] {
+  if (!Array.isArray(valor)) return [];
+  return valor.filter(
+    (p): p is Ponto => !!p && typeof p.nome === 'string' && typeof p.cidade === 'string',
+  );
 }
 
 // ---------- usuários ----------
@@ -337,19 +335,20 @@ export function buscarCaronas(filtro: FiltroBusca = {}): Promise<CaronaComMotori
     // Uma consulta simples (campo único, sem índice composto); os filtros de
     // trajeto e data são aplicados aqui, com as regras da busca (RNF-06: sem IA).
     const snap = await getDocs(query(collection(db, 'caronas'), where('validaAte', '>=', tolerancia)));
-    const caronas = snap.docs
+    const encontradas = snap.docs
       .map((d) => paraCarona(d.id, d.data(), filtro.data))
       .filter((c): c is Carona => c !== null)
       .filter((c) => new Date(c.dataHora).getTime() >= Date.now() - 60 * 60 * 1000)
       .filter((c) => c.motoristaId !== uid)
-      .filter((c) => atendeTrajeto(c, filtro.origem, filtro.destino))
       .filter((c) => !filtro.horario || pertoDoHorario(c.dataHora, filtro.horario))
-      .sort((a, b) => a.dataHora.localeCompare(b.dataHora));
-    // Caronas que saem do ponto de embarque pedido aparecem primeiro.
-    const ponto = filtro.pontoEmbarque ? normalizar(filtro.pontoEmbarque) : '';
-    const noPonto = (c: Carona) => !!ponto && !!c.pontoEmbarque && mesmoPonto(normalizar(c.pontoEmbarque), ponto);
-    caronas.sort((a, b) => Number(noPonto(b)) - Number(noPonto(a)));
-    return anexarMotoristas(caronas);
+      // Trajeto: passa pela cidade (ou ponto) de saída e depois pela de chegada (RF-06 e RF-20).
+      .map((carona) => ({ carona, ...atendeBusca(carona, filtro) }))
+      .filter((r) => r.atende);
+    // Primeiro as que passam pelos pontos pedidos; depois, por horário de saída.
+    encontradas.sort(
+      (a, b) => b.pontosEncontrados - a.pontosEncontrados || a.carona.dataHora.localeCompare(b.carona.dataHora),
+    );
+    return anexarMotoristas(encontradas.map((r) => r.carona));
   });
 }
 
@@ -372,6 +371,8 @@ export function publicarCarona(dados: NovaCarona): Promise<Carona> {
       destino: dados.destino,
       paradas: dados.paradas,
       pontoEmbarque: dados.pontoEmbarque?.trim() || undefined,
+      // Lugares por onde passa dentro das cidades, na ordem (RF-20).
+      pontos: dados.pontos.length ? dados.pontos : undefined,
       // Trajeto normalizado (sem acento, minúsculo) para a busca por paradas.
       trajeto: [dados.origem, ...dados.paradas, dados.destino].map(normalizar),
       primeiraSaida: dados.dataHora,

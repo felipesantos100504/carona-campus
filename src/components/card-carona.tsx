@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { resumoRota } from '@/data/roteiro';
 import { Carona, Usuario } from '@/data/tipos';
 import { cores, espaco, raio, sombra, tipografia } from '@/theme';
 import { contar, formatarData, formatarDiasSemana, formatarHora, formatarMoeda, formatarNota } from '@/utils/formato';
@@ -25,10 +26,13 @@ export function SeloVagas({ carona }: { carona: Carona }) {
 
 /** Cartão completo de carona, usado nos resultados e nas listas de viagens. */
 export function CardCarona({ carona, motorista, onPress }: Props) {
+  // Dentro da cidade, o cartão mostra os lugares (Posto Fênix → UTFPR) em vez das cidades (RF-20).
+  const rota = resumoRota(carona);
+  const passaPor = rota.passaPor.length > 0 ? `passa por ${rota.passaPor.join(', ')}` : '';
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Carona de ${carona.origem} para ${carona.destino}`}
+      accessibilityLabel={`Carona de ${rota.de} para ${rota.para}`}
       onPress={onPress}
       style={({ pressed }) => [styles.cartao, pressed && styles.pressionado]}>
       <View style={styles.linha}>
@@ -55,27 +59,29 @@ export function CardCarona({ carona, motorista, onPress }: Props) {
         <View style={styles.cidades}>
           <View style={styles.pontoOrigem} />
           <Text style={styles.cidade} numberOfLines={1}>
-            {carona.origem}
+            {rota.de}
           </Text>
           <View style={styles.tracejado} />
           <Ionicons name="location-outline" size={16} color={cores.primaria} />
           <Text style={styles.cidade} numberOfLines={1}>
-            {carona.destino}
+            {rota.para}
           </Text>
         </View>
         <View style={styles.paradas}>
           <Ionicons
-            name={carona.paradas.length > 0 ? 'git-branch-outline' : 'checkmark-circle-outline'}
+            name={rota.cidade ? 'business-outline' : passaPor ? 'git-branch-outline' : 'checkmark-circle-outline'}
             size={14}
             color={cores.primaria}
           />
           <Text style={styles.textoParadas} numberOfLines={1}>
-            {carona.paradas.length > 0
-              ? `Passa por ${carona.paradas.join(', ')}`
-              : 'Direta, sem paradas intermediárias'}
+            {rota.cidade
+              ? `Dentro de ${rota.cidade}${passaPor ? ` · ${passaPor}` : ''}`
+              : passaPor
+                ? passaPor[0].toUpperCase() + passaPor.slice(1)
+                : 'Direta, sem paradas intermediárias'}
           </Text>
         </View>
-        {carona.pontoEmbarque ? (
+        {carona.pontoEmbarque && !rota.cidade ? (
           <View style={styles.paradas}>
             <Ionicons name="flag-outline" size={14} color={cores.verde} />
             <Text style={styles.textoParadas} numberOfLines={1}>
@@ -109,23 +115,28 @@ export function CardCarona({ carona, motorista, onPress }: Props) {
 /** Versão compacta para listas curtas, como as caronas em destaque da tela inicial. */
 export function CardCaronaCompacto({ carona, motorista, onPress }: Props) {
   const vagas = carona.vagasDisponiveis;
+  const rota = resumoRota(carona);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Carona de ${carona.origem} para ${carona.destino}`}
+      accessibilityLabel={`Carona de ${rota.de} para ${rota.para}`}
       onPress={onPress}
       style={({ pressed }) => [styles.cartao, styles.compacto, pressed && styles.pressionado]}>
       {motorista ? <Avatar nome={motorista.nome} fotoUri={motorista.fotoUri} tamanho={44} verificado /> : null}
       <View style={styles.dadosCompacto}>
         <Text style={styles.cidade} numberOfLines={1}>
-          {carona.origem} → {carona.destino}
+          {rota.de} → {rota.para}
         </Text>
         <Text style={styles.data}>
           <Ionicons name="time-outline" size={12} color={cores.textoSecundario} /> {formatarData(carona.dataHora)} ·{' '}
           {formatarHora(carona.dataHora)}
         </Text>
         <Text style={styles.data} numberOfLines={1}>
-          {carona.paradas.length > 0 ? `Via ${carona.paradas.join(', ')}` : 'Direto'}
+          {rota.cidade
+            ? `Dentro de ${rota.cidade}`
+            : rota.passaPor.length > 0
+              ? `Via ${rota.passaPor.join(', ')}`
+              : 'Direto'}
         </Text>
       </View>
       <View style={styles.preco}>

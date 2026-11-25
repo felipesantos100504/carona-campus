@@ -1,4 +1,4 @@
-import { APELIDOS, CIDADES, normalizar } from './cidades';
+import { APELIDOS, CIDADES, mesmoPonto, normalizar, pontoConhecido, pontosNoTexto } from './cidades';
 import type { ViagemExtraida } from './ia';
 
 // Extração por regras (sem IA), usada como plano B quando o Gemini falha ou
@@ -49,11 +49,29 @@ export function extrairViagemLocal(texto: string): Omit<ViagemExtraida, 'fonte'>
   // Paradas: todas as outras cidades, na ordem em que aparecem no texto.
   const paradas = cidades.map((c) => c.nome).filter((n) => n !== origem && n !== destino);
 
+  // Lugares do catálogo (RF-20): "do Posto Fênix, passo no Mercado Ítalo, até a UTFPR".
+  const citados = pontosNoTexto(texto);
+  const frase = extrairPontoEmbarque(texto);
+  const chegaEm = (pos: number) => /\b(pra|para|ate|chegar)\s+(?:a\s+|o\s+|na\s+|no\s+)?$/.test(t.slice(Math.max(0, pos - 15), pos));
+  // Sem "saio do...", o primeiro lugar citado é a saída, a não ser que venha depois de "pra" ou "até".
+  const pontoEmbarque = frase
+    ? (pontoConhecido(frase)?.nome ?? frase)
+    : citados.length > 1 || (citados.length === 1 && !chegaEm(citados[0].pos))
+      ? citados[0].nome
+      : undefined;
+  const pontos = citados
+    .filter((p) => !pontoEmbarque || !mesmoPonto(p.nome, pontoEmbarque))
+    .map(({ nome, cidade }) => ({ nome, cidade }));
+  // Sem cidades no texto, a viagem é dentro da cidade dos lugares citados.
+  const cidadeSaida = (pontoEmbarque && pontoConhecido(pontoEmbarque)?.cidade) ?? citados[0]?.cidade;
+  const cidadeChegada = pontos.length ? pontos[pontos.length - 1].cidade : cidadeSaida;
+
   const resultado = {
-    origem,
-    destino,
+    origem: origem ?? cidadeSaida,
+    destino: destino ?? cidadeChegada,
     paradas,
-    pontoEmbarque: extrairPontoEmbarque(texto),
+    pontoEmbarque,
+    pontos,
     horario: extrairHorario(t),
     vagas: extrairVagas(t),
     valorPorVaga: extrairValor(t),

@@ -15,6 +15,7 @@ Pessoas que fazem viagens intermunicipais com regularidade (estudantes, trabalha
 1. **Publicação com IA:** o motorista descreve a viagem como se mandasse uma mensagem no WhatsApp e a IA organiza origem, destino, paradas, horário, vagas e valor. Se a IA falhar, os campos podem ser preenchidos manualmente.
 2. **Viagens recorrentes:** o motorista cadastra uma viagem semanal uma única vez, sem republicar toda semana.
 3. **Paradas intermediárias:** a busca também encontra viagens que passam pela cidade do passageiro, mesmo com outra origem ou destino.
+4. **Pontos de passagem e caronas dentro da cidade:** o motorista informa os lugares por onde passa (ex.: Posto Fênix → Mercado Ítalo → Posto Stop → UTFPR, em Dois Vizinhos) e o passageiro busca de um lugar até outro, sem mapa (ADR-0010).
 
 A busca e a compatibilidade entre viagens são feitas por regras programadas, não pela IA. O valor por vaga é apenas informativo: o pagamento é combinado diretamente entre motorista e passageiro. Fora do escopo inicial: pagamentos pelo app, chat interno e rastreamento em tempo real.
 
@@ -51,7 +52,7 @@ Com o servidor rodando:
 - **Navegador:** pressione `w` no terminal ou rode `npm run web`. O login com Google só aparece nesta versão.
 - **Emulador Android:** pressione `a` (requer Android Studio com um emulador configurado).
 
-Para usar o app, crie uma conta e confirme o e-mail (ou entre com Google na versão web). Depois que os dados de exemplo forem cadastrados com `npm run popular`, também dá para entrar com as **contas de demonstração** listadas em [`scripts/dados-exemplo.mjs`](scripts/dados-exemplo.mjs) (a senha está nesse arquivo). As principais são `motorista@carona-campus.test` (Rafael, com caronas saindo de Quedas do Iguaçu e um pedido de vaga esperando resposta) e `passageiro@carona-campus.test` (Júlia, com esse pedido e uma viagem já realizada para avaliar). O passo a passo de uso está no [tutorial](docs/tutorial.md).
+Para usar o app, crie uma conta e confirme o e-mail (ou entre com Google na versão web). Depois que os dados de exemplo forem cadastrados com `npm run popular`, também dá para entrar com as **contas de demonstração** listadas em [`scripts/dados-exemplo.mjs`](scripts/dados-exemplo.mjs) (a senha está nesse arquivo). As principais são `motorista@carona-campus.test` (Rafael, com caronas saindo de Quedas do Iguaçu, uma carona dentro de Dois Vizinhos até a UTFPR e um pedido de vaga esperando resposta) e `passageiro@carona-campus.test` (Júlia, com esse pedido e uma viagem já realizada para avaliar). O passo a passo de uso está no [tutorial](docs/tutorial.md).
 
 Antes de subir alterações, rode `npm run lint` e `npm run typecheck`.
 
@@ -87,7 +88,7 @@ Os valores do Firebase **não são segredos**: eles identificam o projeto, e que
 
 | Comando | O que faz |
 |---|---|
-| `npm run test:regras` | Testa as regras do Firestore no emulador local (26 casos; precisa de Java) |
+| `npm run test:regras` | Testa as regras do Firestore no emulador local (27 casos; precisa de Java) |
 | `npm run emuladores` | Sobe os emuladores de Auth e Firestore para testar o app sem tocar no banco real |
 | `npm run popular` | Cadastra as contas de demonstração e os dados de exemplo no Firebase |
 | `npm run exportar` | Gera [`docs/estrutura-firestore.json`](docs/estrutura-firestore.json) a partir dos dados do Firestore |

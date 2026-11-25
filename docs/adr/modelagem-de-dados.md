@@ -367,7 +367,7 @@ Com o Firestore, era preciso implementar o fluxo pedido → confirmação (RF-07
 - **Busca sem índice composto:** cada carona grava `validaAte` (a data da viagem única, ou uma data distante para as recorrentes) e o `trajeto` normalizado. A busca consulta `validaAte >= agora` e aplica os filtros de trajeto, parada e data no app, por regras programadas (RNF-06).
 - **Avaliações:** a média e o total de notas são calculados a partir das notas recebidas (`avaliacoes` onde `avaliadoId` é a pessoa), em vez de gravar a média no perfil de outra pessoa. A agregação `average()` no servidor foi testada, mas exige um índice composto no banco real; com poucas notas por pessoa, calcular no app evita esse índice. O total de caronas oferecidas usa `count()` no servidor.
 - **Avisos no app:** em vez de notificação push, a aba Viagens mostra em tempo real (`onSnapshot`) o número de pedidos aguardando o motorista, e o passageiro vê a situação do pedido na reserva.
-- **Testes:** as regras são testadas no emulador do Firestore (`npm run test:regras`, 26 casos).
+- **Testes:** as regras são testadas no emulador do Firestore (`npm run test:regras`, 27 casos).
 
 ### Alternativas consideradas
 
@@ -390,3 +390,43 @@ Positivas: as regras de negócio críticas valem no servidor, mesmo com o app co
 Negativas assumidas: a busca lê todas as caronas válidas e filtra no app, o que é adequado ao volume previsto (~40 caronas por dia), mas precisaria de índices e filtros no servidor se o volume crescer muito; a reserva numa viagem recorrente vale para todas as semanas, sem controle de vagas por data.
 
 Difícil de mudar depois: o formato dos ids das reservas e avaliações está nas regras e no app; mudá-lo exige migrar os documentos existentes.
+
+---
+
+## ADR-0010 — Pontos de passagem com nome, sem mapa
+
+- **Data:** 2026-11-24
+- **Situação:** Aceita
+- **Quem decidiu:** Equipe de Desenvolvimento
+
+### Contexto
+
+O grupo quis buscar caronas que passam por lugares conhecidos dentro da cidade até a universidade (ex.: Posto Fênix, Mercado Ítalo e Posto Stop até a UTFPR, em Dois Vizinhos), inclusive caronas que não saem da cidade. Até aqui a busca comparava só cidades, e cada carona tinha no máximo um ponto de embarque (RF-18). A entrega era em seis dias.
+
+### Decisão
+
+Cada carona ganha o campo opcional `pontos`: a lista, na ordem do caminho, dos lugares por onde o motorista passa ou deixa passageiros, cada um como `{ nome, cidade }`. A carona dentro da cidade é uma carona com origem e destino iguais. O roteiro (`src/data/roteiro.ts`) junta as cidades do trajeto, o ponto de embarque e os pontos; a busca aceita um lugar de saída e um de chegada e mostra a carona se o primeiro vem antes do segundo, com as que passam pelos dois lugares em primeiro lugar. O ponto de embarque nunca conta como chegada. Dentro da mesma cidade, a carona precisa passar por pelo menos um dos lugares pedidos.
+
+Os lugares são comparados por nome. Um catálogo de lugares conhecidos (`PONTOS_CONHECIDOS` em `src/data/cidades.ts`, com apelidos como "fenix" e "utf") padroniza os nomes, sugere pontos na publicação e na busca e permite descobrir a cidade quando o texto só cita lugares ("do Posto Fênix até a UTFPR"). Outros lugares, como bairros, podem ser digitados livremente. A IA extrai os pontos na publicação e o lugar de chegada na busca; o plano B por regras reconhece os lugares do catálogo. As regras do Firestore limitam `pontos` a uma lista de até 10 itens.
+
+### Alternativas consideradas
+
+#### Mapa com endereços e busca por proximidade
+
+A favor: aceitaria o endereço exato da casa e acharia caronas que passam perto.
+Contra: exige converter endereços em coordenadas (Google Maps/Places, pago, ou OpenStreetMap com limite de uso), mostrar mapa, calcular distâncias e mudar o banco e as regras.
+Por que não: o risco de não ficar estável até a entrega era alto; fica como trabalho futuro no PRD.
+
+#### Vários pontos de embarque como texto livre, sem cidade
+
+A favor: mudança mínima no banco.
+Contra: não diferencia lugares com o mesmo nome em cidades diferentes (há UTFPR em várias cidades) nem permite saber a ordem entre cidades e pontos.
+Por que não: guardar a cidade de cada ponto custa pouco e evita resultados errados.
+
+### Consequências
+
+Positivas: caronas dentro da cidade e caronas entre cidades que terminam num lugar conhecido (ex.: de Francisco Beltrão até a UTFPR) passam a ser encontradas pelo lugar; a busca continua sem IA e sem índice composto (RNF-06); caronas antigas, sem `pontos`, continuam funcionando.
+
+Negativas assumidas: a comparação é por nome, então um lugar digitado de outro jeito (fora do catálogo) pode não ser reconhecido; o endereço de casa não é comparado por distância; a ordem dos pontos é a informada pelo motorista; o catálogo precisa ser atualizado no código para incluir novos lugares.
+
+Difícil de mudar depois: o formato `{ nome, cidade }` está no banco, nas regras e no app; trocar por coordenadas exigiria migrar as caronas existentes.

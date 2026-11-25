@@ -73,6 +73,8 @@ service cloud.firestore {
         && d.vagasDisponiveis is int && d.vagasDisponiveis >= 0 && d.vagasDisponiveis <= d.vagasTotais
         && d.valorPorVaga is number && d.valorPorVaga >= 0 && d.valorPorVaga < 10000
         && textoOpcional(d, 'pontoEmbarque', 120)
+        // Lugares por onde passa dentro das cidades (RF-20): lista de até 10 { nome, cidade }.
+        && (!('pontos' in d) || (d.pontos is list && d.pontos.size() <= 10))
         && textoOpcional(d, 'observacoes', 500)
         && textoOpcional(d, 'textoOriginal', 1000);
     }

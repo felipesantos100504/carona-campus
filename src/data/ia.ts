@@ -1,8 +1,9 @@
 import { getAI, getGenerativeModel, GoogleAIBackend } from 'firebase/ai';
 
-import { APELIDOS, CIDADES, normalizar } from './cidades';
+import { APELIDOS, CIDADES, mesmoPonto, normalizar, PONTOS_CONHECIDOS, pontoConhecido } from './cidades';
 import { extrairViagemLocal, revisarTextoLocal } from './extracao-local';
 import { app } from './firebase';
+import type { Ponto } from './tipos';
 
 // Funcionalidade de IA (PRD, seção 6): o Gemini trabalha com texto livre em
 // três pontos do app:
@@ -27,6 +28,8 @@ export type ViagemExtraida = {
   paradas: string[];
   /** Local de embarque dentro da cidade de origem (ex.: "Posto Fênix"). */
   pontoEmbarque?: string;
+  /** Outros lugares por onde o motorista passa, na ordem (RF-20). */
+  pontos?: Ponto[];
   /** AAAA-MM-DD */
   data?: string;
   /** HH:MM */
@@ -54,6 +57,8 @@ export type BuscaExtraida = {
   destino?: string;
   /** Onde o passageiro quer embarcar, dentro da cidade (ex.: "Posto Fênix"). */
   pontoEmbarque?: string;
+  /** Onde o passageiro quer descer, dentro da cidade de destino (ex.: "UTFPR"). */
+  pontoChegada?: string;
   /** AAAA-MM-DD */
   data?: string;
   /** HH:MM */
@@ -103,6 +108,19 @@ const ESQUEMA_PUBLICACAO: Esquema = {
       items: { type: 'INTEGER' },
       description: 'Dias da semana em que a viagem se repete (0=domingo...6=sábado). Vazio se não for recorrente.',
     },
+    pontos: {
+      type: 'ARRAY',
+      description:
+        'Outros lugares dentro das cidades por onde o motorista passa ou onde deixa passageiros (ex.: mercado, posto, universidade), na ordem do trajeto, sem repetir o ponto de embarque',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          nome: texto('Nome do lugar, como citado'),
+          cidade: texto('CIDADE onde fica o lugar'),
+        },
+        required: ['nome', 'cidade'],
+      },
+    },
     observacoes: texto(
       'Outras informações para o passageiro que o texto cita (bagagem, regras do carro, pontualidade), como escritas. Não repita rota, data, horário, vagas nem valor.',
     ),
@@ -110,7 +128,13 @@ const ESQUEMA_PUBLICACAO: Esquema = {
   required: ['paradas'],
 };
 
-const ESQUEMA_BUSCA: Esquema = { type: 'OBJECT', properties: CAMPOS_COMUNS };
+const ESQUEMA_BUSCA: Esquema = {
+  type: 'OBJECT',
+  properties: {
+    ...CAMPOS_COMUNS,
+    pontoChegada: texto('Local dentro da cidade de destino aonde o passageiro quer chegar, como citado (ex.: "UTFPR")'),
+  },
+};
 
 const ESQUEMA_REVISAO: Esquema = {
   type: 'OBJECT',
@@ -143,7 +167,9 @@ function cabecalho() {
     `Hoje é ${DIAS[hoje.getDay()]}, ${dataHoje}. Converta "hoje", "amanhã" e dias da semana em datas a partir de hoje.`,
     'Regras:',
     '- "origem", "destino" e "paradas" são sempre CIDADES, escritas por extenso, com acentos e iniciais maiúsculas (ex.: "Francisco Beltrão").',
-    '- Lugares dentro de uma cidade (universidade, posto, rodoviária, mercado, bairro) nunca vão em origem/destino. Se for o local de saída, vai em "pontoEmbarque"; senão, ignore.',
+    '- Lugares dentro de uma cidade (universidade, posto, rodoviária, mercado, bairro, rua) nunca vão em origem/destino. O local de saída vai em "pontoEmbarque".',
+    `- Lugares conhecidos e suas cidades: ${PONTOS_CONHECIDOS.map((p) => `${p.nome} (${p.cidade})`).join(', ')}.`,
+    '- Se o texto só citar lugares de uma mesma cidade, sem citar cidades (ex.: "do Posto Fênix até a UTFPR"), a viagem é dentro dessa cidade: "origem" e "destino" são essa mesma cidade.',
     '- Horários como "18h", "6 da tarde" ou "por volta das sete da noite" viram "18:00", "18:00" e "19:00".',
     '- Não invente informações: omita os campos que o texto não informa.',
   ];
@@ -151,8 +177,9 @@ function cabecalho() {
 
 function instrucoesPublicacao(textoLivre: string) {
   return [
-    'Você organiza anúncios de carona entre cidades brasileiras, escritos pelo motorista.',
+    'Você organiza anúncios de carona entre cidades brasileiras ou dentro de uma cidade, escritos pelo motorista.',
     ...cabecalho(),
+    '- Os outros lugares por onde o motorista passa ou onde deixa passageiros vão em "pontos", na ordem, cada um com a sua cidade.',
     '- "data" é a próxima saída. Se a viagem se repete ("toda sexta", "todos os dias", "de segunda a sexta"), preencha também "diasSemana".',
     '',
     `Anúncio: """${textoLivre}"""`,
@@ -161,8 +188,9 @@ function instrucoesPublicacao(textoLivre: string) {
 
 function instrucoesBusca(textoLivre: string) {
   return [
-    'Você interpreta o pedido de um passageiro que procura carona entre cidades brasileiras.',
+    'Você interpreta o pedido de um passageiro que procura carona entre cidades brasileiras ou dentro de uma cidade.',
     ...cabecalho(),
+    '- O lugar aonde o passageiro quer chegar (ex.: "UTFPR") vai em "pontoChegada".',
     '- "data" é o dia em que o passageiro quer viajar; "horario" é o horário aproximado de saída que ele pediu.',
     '',
     `Pedido: """${textoLivre}"""`,
@@ -195,16 +223,56 @@ function cidade(nome?: string) {
 const textoValido = (v: unknown, maximo = 80) =>
   typeof v === 'string' && v.trim() && v.trim().length <= maximo ? v.trim() : undefined;
 
+/** Lugares do catálogo ficam com o nome oficial ("posto fenix" → "Posto Fênix"). */
+function nomeDoPonto(v: unknown) {
+  const nome = textoValido(v, 120);
+  return nome ? (pontoConhecido(nome)?.nome ?? nome) : undefined;
+}
+
+/** Cidade do primeiro lugar do catálogo citado, para quando o texto não cita cidades. */
+function cidadeDosPontos(nomes: (string | undefined)[]) {
+  for (const nome of nomes) {
+    const conhecido = nome ? pontoConhecido(nome) : undefined;
+    if (conhecido) return conhecido.cidade;
+  }
+  return undefined;
+}
+
+/**
+ * "do Posto Fênix até a UTFPR": a cidade que faltar vem dos lugares do
+ * catálogo (a de saída, do primeiro lugar; a de chegada, do último).
+ */
+function completarCidades<T extends { origem?: string; destino?: string }>(r: T, pontos: (string | undefined)[]): T {
+  if (r.origem && r.destino) return r;
+  const origem = r.origem ?? cidadeDosPontos(pontos) ?? r.destino;
+  const destino = r.destino ?? cidadeDosPontos([...pontos].reverse()) ?? origem;
+  return { ...r, origem, destino };
+}
+
 function validarComuns(r: Record<string, unknown>) {
   const data = textoValido(r.data);
   const horario = textoValido(r.horario);
   return {
     origem: cidade(textoValido(r.origem)),
     destino: cidade(textoValido(r.destino)),
-    pontoEmbarque: textoValido(r.pontoEmbarque, 120),
+    pontoEmbarque: nomeDoPonto(r.pontoEmbarque),
     data: data && /^\d{4}-\d{2}-\d{2}$/.test(data) && !isNaN(Date.parse(data)) ? data : undefined,
     horario: horario && /^([01]\d|2[0-3]):[0-5]\d$/.test(horario) ? horario : undefined,
   };
+}
+
+/** Pontos da publicação: nome e cidade válidos, sem repetir o embarque, no máximo 10. */
+function validarPontos(bruto: unknown, embarque: string | undefined, destino: string | undefined): Ponto[] {
+  if (!Array.isArray(bruto)) return [];
+  const pontos: Ponto[] = [];
+  for (const item of bruto) {
+    if (!item || typeof item !== 'object') continue;
+    const nome = nomeDoPonto((item as Record<string, unknown>).nome);
+    if (!nome || (embarque && mesmoPonto(nome, embarque)) || pontos.some((p) => mesmoPonto(p.nome, nome))) continue;
+    const daCidade = cidade(textoValido((item as Record<string, unknown>).cidade)) ?? pontoConhecido(nome)?.cidade ?? destino;
+    if (daCidade) pontos.push({ nome, cidade: daCidade });
+  }
+  return pontos.slice(0, 10);
 }
 
 /** Confere cada campo da resposta; o que vier fora do formato é descartado. */
@@ -216,20 +284,28 @@ function validarPublicacao(bruto: unknown): Omit<ViagemExtraida, 'fonte'> | null
   const dias = Array.isArray(r.diasSemana)
     ? [...new Set(r.diasSemana.filter((d): d is number => Number.isInteger(d) && d >= 0 && d <= 6))]
     : [];
-  const resultado = {
-    ...validarComuns(r),
-    paradas: Array.isArray(r.paradas) ? r.paradas.map((p) => cidade(textoValido(p))).filter((p): p is string => !!p) : [],
-    vagas,
-    valorPorVaga: valor,
-    diasSemana: dias.length ? dias.sort() : undefined,
-    observacoes: textoValido(r.observacoes, 500),
-  };
+  const comuns = validarComuns(r);
+  const pontos = validarPontos(r.pontos, comuns.pontoEmbarque, comuns.destino);
+  const resultado = completarCidades(
+    {
+      ...comuns,
+      paradas: Array.isArray(r.paradas) ? r.paradas.map((p) => cidade(textoValido(p))).filter((p): p is string => !!p) : [],
+      pontos,
+      vagas,
+      valorPorVaga: valor,
+      diasSemana: dias.length ? dias.sort() : undefined,
+      observacoes: textoValido(r.observacoes, 500),
+    },
+    [comuns.pontoEmbarque, ...pontos.map((p) => p.nome)],
+  );
   return resultado.origem || resultado.destino ? resultado : null;
 }
 
 function validarBusca(bruto: unknown): Omit<BuscaExtraida, 'fonte'> | null {
   if (!bruto || typeof bruto !== 'object') return null;
-  const resultado = validarComuns(bruto as Record<string, unknown>);
+  const comuns = validarComuns(bruto as Record<string, unknown>);
+  const pontoChegada = nomeDoPonto((bruto as Record<string, unknown>).pontoChegada);
+  const resultado = completarCidades({ ...comuns, pontoChegada }, [comuns.pontoEmbarque, pontoChegada]);
   return Object.values(resultado).some(Boolean) ? resultado : null;
 }
 
@@ -311,7 +387,7 @@ export async function extrairViagem(textoLivre: string): Promise<ViagemExtraida>
   throw new ErroExtracao();
 }
 
-/** Busca (passageiro): texto livre → origem, destino, data, horário e ponto de embarque. */
+/** Busca (passageiro): texto livre → origem, destino, data, horário e pontos de saída e de chegada. */
 export async function interpretarBusca(textoLivre: string): Promise<BuscaExtraida> {
   if (textoLivre.trim().length < 5) throw new ErroExtracao('Diga para onde você quer ir.');
 
@@ -324,8 +400,10 @@ export async function interpretarBusca(textoLivre: string): Promise<BuscaExtraid
 
   const local = extrairViagemLocal(textoLivre);
   if (local) {
-    const { origem, destino, pontoEmbarque, data, horario } = local;
-    return { origem, destino, pontoEmbarque, data, horario, fonte: 'regras' };
+    const { origem, destino, pontoEmbarque, data, horario, pontos } = local;
+    // Na busca, o último lugar citado é aonde o passageiro quer chegar.
+    const pontoChegada = pontos?.length ? pontos[pontos.length - 1].nome : undefined;
+    return { origem, destino, pontoEmbarque, pontoChegada, data, horario, fonte: 'regras' };
   }
   throw new ErroExtracao('Não entendemos o pedido. Preencha as cidades nos campos da busca.');
 }

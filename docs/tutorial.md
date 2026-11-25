@@ -21,11 +21,15 @@ Nas próximas vezes, entre pela aba **Entrar** com e-mail e senha. A sessão fic
 **Do jeito mais rápido, com IA:** na aba **Buscar**, escreva no quadro "Diga para onde você precisa ir" o que você precisa, por exemplo:
 > preciso ir pra Cascavel sexta à noite, saindo do Posto Fênix em Quedas do Iguaçu
 
-Toque em **Buscar com IA**. O app entende as cidades, o dia, o horário aproximado e o ponto de embarque e já mostra as caronas que saem até 1h30 antes ou depois desse horário, com as que saem do seu ponto em primeiro lugar. Se o pedido não tiver cidades (ex.: "da UTFPR até o posto"), o app avisa: por enquanto ele atende caronas entre cidades.
+ou, dentro da cidade:
+> preciso ir do Mercado Ítalo até a UTFPR amanhã às 18h30
+
+Toque em **Buscar com IA**. O app entende as cidades, o dia, o horário aproximado e os lugares de saída e de chegada e já mostra as caronas que saem até 1h30 antes ou depois desse horário, com as que passam pelos seus lugares em primeiro lugar. Lugares conhecidos (UTFPR, Posto Fênix, Mercado Ítalo, Posto Stop) já indicam a cidade: "do Mercado Ítalo até a UTFPR" busca dentro de Dois Vizinhos.
 
 **Ou pelos campos:**
 
-1. Na aba **Buscar**, informe a cidade de saída e a de destino. As sugestões de cidades aparecem enquanto você digita.
+1. Na aba **Buscar**, informe a cidade de saída e a de destino. As sugestões de cidades aparecem enquanto você digita. Para andar dentro da cidade, use a mesma cidade nos dois campos.
+   Em **Lugares dentro da cidade**, informe onde quer embarcar e onde quer descer (ex.: "Posto Fênix" e "UTFPR"). Os lugares conhecidos da cidade aparecem como sugestão. Se o seu lugar não estiver em nenhuma carona (ex.: o endereço da sua casa), escolha o lugar conhecido mais perto.
 2. Escolha a data (**Qualquer dia**, **Hoje** ou **Amanhã**) e toque em **Buscar caronas**.
 3. A lista mostra também as viagens que **passam** pelas suas cidades. Exemplo: buscando "Guarapuava → Curitiba", aparece a viagem "Pato Branco → Curitiba" que passa por Guarapuava.
 4. Viagens com o selo **Toda semana** se repetem nos dias indicados.
@@ -47,7 +51,7 @@ O valor por vaga é apenas informativo: o pagamento é combinado diretamente com
 1. Na aba **Publicar**, escreva a viagem como numa mensagem de WhatsApp. Exemplo:
    > saio de Pato Branco toda sexta às 18h pra Curitiba, passo por Guarapuava e Ponta Grossa, 3 vagas, R$ 90
 2. Toque em **Interpretar com IA**. O Gemini organiza origem, destino, paradas, data, horário, vagas, valor e os dias da semana (se a viagem se repete).
-3. Confira os campos e corrija o que precisar. Dá para remover ou adicionar paradas, informar o **ponto de embarque** (ex.: "Posto Fênix", "rodoviária"), ligar **Repetir toda semana** e escrever **Observações** para o passageiro (ex.: "uma mala média por pessoa").
+3. Confira os campos e corrija o que precisar. Dá para remover ou adicionar paradas, informar o **ponto de embarque** (ex.: "Posto Fênix", "rodoviária"), adicionar **Pontos de passagem** na ordem do caminho (ex.: Mercado Ítalo → Posto Stop → UTFPR; os lugares conhecidos aparecem como sugestão), ligar **Repetir toda semana** e escrever **Observações** para o passageiro (ex.: "uma mala média por pessoa").
 4. Toque em **Publicar carona**. Antes de publicar, a IA confere o ponto de embarque e as observações, que ficam visíveis para todos. Se o texto tiver telefone, e-mail, documento, chave Pix, link ou linguagem ofensiva, o app avisa: corrija o texto ou toque em **Publicar mesmo assim**. O mesmo vale para o "Sobre você" no **Perfil**.
 5. O app abre os detalhes da carona publicada.
 

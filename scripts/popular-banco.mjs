@@ -70,6 +70,7 @@ for (const c of caronas) {
     destino: c.destino,
     paradas: c.paradas,
     ...(c.pontoEmbarque ? { pontoEmbarque: c.pontoEmbarque } : {}),
+    ...(c.pontos?.length ? { pontos: c.pontos } : {}),
     trajeto: [c.origem, ...c.paradas, c.destino].map(normalizar),
     primeiraSaida: c.primeiraSaida,
     validaAte: recorrente ? SEM_DATA_FINAL : c.primeiraSaida,

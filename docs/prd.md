@@ -31,6 +31,7 @@ Pessoas que fazem viagens intermunicipais com regularidade — estudantes, traba
 | RF-17 | Passageiro descreve em texto livre a carona de que precisa (ex.: "preciso ir pra Cascavel sexta à noite, saindo do Posto Fênix em Quedas do Iguaçu"). | Sistema extrai origem, destino, data, horário aproximado e ponto de embarque, preenche a busca e mostra as caronas que saem até 1h30 antes ou depois do horário pedido, com as que saem do ponto de embarque pedido em primeiro lugar. Se o pedido não citar cidades, o sistema avisa e pede as cidades nos campos. |
 | RF-18 | Motorista informa o ponto de embarque dentro da cidade de origem (ex.: "Posto Fênix", "rodoviária"). | Sistema salva o ponto (opcional, digitado ou extraído pela IA) e o exibe na lista de caronas e nos detalhes da viagem. |
 | RF-19 | Usuário escreve um texto que ficará visível para todos (observações da carona ou "Sobre você" no perfil). | Antes de gravar, o sistema confere o texto com a IA e avisa se ele tem dados de contato (telefone, e-mail, rede social, link), documentos ou chave Pix, ou linguagem ofensiva ou discriminatória. A pessoa pode corrigir ou seguir mesmo assim. Se a IA falhar, a conferência é feita por regras (contatos, documentos e links). |
+| RF-20 | Motorista informa os lugares por onde passa dentro das cidades, na ordem (ex.: Posto Fênix → Mercado Ítalo → Posto Stop → UTFPR, em Dois Vizinhos), inclusive em caronas dentro da mesma cidade; o passageiro busca de um lugar até outro (ex.: "do Mercado Ítalo até a UTFPR"). | Sistema salva os pontos de passagem de cada carona (digitados, escolhidos entre os lugares conhecidos da cidade ou extraídos pela IA) e mostra as caronas que passam pelo lugar de saída e depois pelo de chegada, com as que passam pelos dois em primeiro lugar. Dentro da mesma cidade, a carona precisa passar por pelo menos um dos lugares pedidos. Se o passageiro informar um lugar que nenhuma carona cita (ex.: o endereço de casa), valem os outros lugares e a cidade. |
 
 ## 4. Requisitos não funcionais
 
@@ -49,6 +50,7 @@ A Inteligência Artificial (LLM via Gemini) **interpreta texto livre** nos dois 
 
 - **Motorista (publicação):** organiza a mensagem do motorista nos campos da viagem (origem, destino, paradas, ponto de embarque, data, horário, vagas, valor por vaga e dias de recorrência). O motorista escreve como se estivesse mandando uma mensagem no WhatsApp — por exemplo, "saio do Posto Fênix em Pato Branco toda sexta às 18h pra Curitiba, passo por Guarapuava e Ponta Grossa, 3 vagas, R$ 90" — e confirma os dados antes de publicar.
 - **Revisão de textos públicos:** antes de publicar as observações da carona ou de salvar o "Sobre você" do perfil, confere se o texto expõe contatos ou documentos ou tem linguagem ofensiva, e avisa a pessoa (RF-19).
+- **Lugares dentro da cidade:** na publicação, a IA também separa os pontos de passagem ("passo no Mercado Ítalo e no Posto Stop até a UTFPR"); na busca, o lugar de chegada. Quando o texto só cita lugares conhecidos, a IA usa a cidade deles (RF-20).
 - **Passageiro (busca):** transforma o pedido do passageiro ("preciso ir pra Cascavel sexta à noite, saindo do Posto Fênix em Quedas do Iguaçu") em origem, destino, data, horário aproximado e ponto de embarque, e já abre os resultados.
 
 A **compatibilidade** entre viagens continua **sem** IA: depois que a IA preenche os campos, a busca aplica regras programadas (a viagem serve se passa pela cidade de origem e depois pela de destino, na data escolhida e perto do horário pedido). Isso deixa o resultado rápido, previsível e independente da disponibilidade da API (RNF-06).
@@ -64,8 +66,8 @@ Sem a IA, a publicação volta a ser um formulário com vários campos (origem, 
 **Entrada:** o texto digitado pelo motorista ao publicar (ex.: "saio do Posto Fênix em Pato Branco sexta 18h pra Curitiba, passo por Guarapuava, 3 vagas, R$ 90") ou pelo passageiro ao buscar (ex.: "preciso ir pra Cascavel sexta à noite, saindo do Posto Fênix em Quedas do Iguaçu").
 
 **Saída:**
-- **Publicação:** origem, destino, paradas intermediárias, ponto de embarque, data, horário, quantidade de vagas, valor por vaga, dias da semana (quando a viagem é recorrente) e observações para o passageiro. O motorista confirma os dados (ou corrige) antes de a viagem ser salva no banco.
-- **Busca:** origem, destino, data, horário aproximado e ponto de embarque, que preenchem a busca e abrem os resultados. O passageiro pode ajustar tudo pelos campos.
+- **Publicação:** origem, destino, paradas intermediárias, ponto de embarque, data, horário, quantidade de vagas, valor por vaga, dias da semana (quando a viagem é recorrente), pontos de passagem dentro das cidades (RF-20) e observações para o passageiro. O motorista confirma os dados (ou corrige) antes de a viagem ser salva no banco.
+- **Busca:** origem, destino, data, horário aproximado, ponto de embarque e ponto de chegada, que preenchem a busca e abrem os resultados. O passageiro pode ajustar tudo pelos campos.
 - **Revisão:** uma lista de avisos curtos (vazia quando o texto está adequado). O app só avisa: a pessoa decide se corrige o texto ou segue mesmo assim.
 
 Lugares dentro de uma cidade (universidade, posto, rodoviária) nunca são tratados como cidade: viram ponto de embarque ou são ignorados.
@@ -84,6 +86,7 @@ Lugares dentro de uma cidade (universidade, posto, rodoviária) nunca são trata
 - Busca por origem, destino e data, incluindo viagens que passam pelo trajeto do passageiro (paradas intermediárias), também em texto livre com a IA (RF-17).
 - Ponto de embarque dentro da cidade de origem, informado pelo motorista (RF-18).
 - Revisão com IA dos textos que ficam públicos (observações da carona e "Sobre você"), com aviso antes de gravar (RF-19).
+- Pontos de passagem dentro das cidades e caronas dentro da mesma cidade, com busca de um lugar até outro, sem mapa (RF-20).
 - Solicitação de vaga pelo passageiro e confirmação ou recusa pelo motorista, com aviso de pedidos pendentes dentro do app.
 - Valor por vaga exibido apenas como informação; pagamento combinado diretamente entre motorista e passageiro.
 - Minhas viagens (como motorista) e minhas reservas (como passageiro).
@@ -97,7 +100,7 @@ Telas previstas: login e cadastro; início e busca de caronas; resultados da bus
 |---|---|
 | Pagamento pelo app | O valor por vaga é só informativo; intermediar pagamentos exige integração financeira e responsabilidade legal fora do alcance do projeto. |
 | Chat interno entre motorista e passageiro | Duplica o WhatsApp, que as pessoas já usam para combinar os detalhes da viagem. |
-| Caronas dentro da mesma cidade (ex.: "do Posto Fênix até a UTFPR") | Comparar lugares dentro da cidade exige mapa com coordenadas e busca por proximidade (Google Maps/Places, que exige plano pago, ou OpenStreetMap), além de mudar o banco e as regras. Fica como trabalho futuro; na v1 o motorista informa o ponto de embarque (RF-18) e a busca prioriza esse ponto. |
+| Busca por endereço exato e por proximidade ("passa a até 500 m da minha casa") | Exige mapa com coordenadas e cálculo de distância (Google Maps/Places, que exige plano pago, ou OpenStreetMap). Na v1, as caronas dentro da cidade usam pontos de passagem com nome (RF-20): o passageiro escolhe o lugar conhecido mais perto ou digita o nome do lugar. |
 | Rastreamento da viagem em tempo real | Exige localização contínua em segundo plano e infraestrutura extra, sem relação com o problema de encontrar e publicar caronas. |
 | Cálculo de rota otimizada/rateio automático de combustível | O motorista define o valor por vaga; calcular rotas e custos consome tempo desproporcional ao prazo. |
 | Comentários/reviews em texto além da nota | Uma nota rápida é suficiente para construir confiança nesta fase. |

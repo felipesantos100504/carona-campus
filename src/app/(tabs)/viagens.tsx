@@ -11,6 +11,7 @@ import { EstadoCarregando, EstadoErro, EstadoVazio } from '@/components/estados'
 import { Segmentado } from '@/components/segmentado';
 import { Selo, Tom } from '@/components/selo';
 import { listarMinhasCaronas, listarMinhasReservas, podeAvaliar } from '@/data/repositorio';
+import { resumoRota, rotuloRota } from '@/data/roteiro';
 import { Carona, ReservaDetalhada, StatusReserva } from '@/data/tipos';
 import { useCarregamento } from '@/hooks/use-carregamento';
 import { cores, espaco, raio, sombra, tipografia } from '@/theme';
@@ -136,14 +137,14 @@ function CartaoReserva({ item }: { item: ReservaDetalhada }) {
     <View style={styles.cartao}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Reserva de ${carona.origem} para ${carona.destino}`}
+        accessibilityLabel={`Reserva: ${rotuloRota(carona)}`}
         onPress={() => abrirCarona(carona.id)}
         style={({ pressed }) => [styles.areaToque, pressed && styles.pressionado]}>
         <View style={styles.linha}>
           <View style={styles.trajeto}>
             <View style={[styles.ponto, { backgroundColor: status.cor }]} />
             <Text style={styles.cidades} numberOfLines={1}>
-              {carona.origem} → {carona.destino}
+              {rotuloRota(carona)}
             </Text>
           </View>
           <Selo rotulo={status.rotulo} tom={status.tom} />
@@ -190,12 +191,13 @@ function CartaoReserva({ item }: { item: ReservaDetalhada }) {
 
 function CartaoMinhaCarona({ carona }: { carona: Carona }) {
   const reservadas = carona.vagasTotais - carona.vagasDisponiveis;
+  const rota = resumoRota(carona);
   const passada = jaPassou(carona.dataHora);
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Sua carona de ${carona.origem} para ${carona.destino}`}
+      accessibilityLabel={`Sua carona: ${rotuloRota(carona)}`}
       onPress={() => abrirCarona(carona.id)}
       style={({ pressed }) => [styles.cartao, pressed && styles.pressionado]}>
       <View style={styles.linha}>
@@ -224,17 +226,21 @@ function CartaoMinhaCarona({ carona }: { carona: Carona }) {
         <View style={styles.linha}>
           <View style={styles.trajeto}>
             <View style={[styles.ponto, { backgroundColor: cores.verde }]} />
-            <Text style={styles.nome}>{carona.origem}</Text>
+            <Text style={styles.nome}>{rota.de}</Text>
           </View>
           <Text style={styles.legenda}>Origem</Text>
         </View>
-        {carona.paradas.length > 0 ? (
-          <Text style={[styles.legenda, styles.paradas]}>Passa por {carona.paradas.join(', ')}</Text>
+        {rota.cidade || rota.passaPor.length > 0 ? (
+          <Text style={[styles.legenda, styles.paradas]}>
+            {[rota.cidade && `Dentro de ${rota.cidade}`, rota.passaPor.length > 0 && `passa por ${rota.passaPor.join(', ')}`]
+              .filter(Boolean)
+              .join(' · ')}
+          </Text>
         ) : null}
         <View style={styles.linha}>
           <View style={styles.trajeto}>
             <View style={[styles.ponto, { backgroundColor: cores.primaria }]} />
-            <Text style={styles.nome}>{carona.destino}</Text>
+            <Text style={styles.nome}>{rota.para}</Text>
           </View>
           <Text style={styles.legenda}>Destino</Text>
         </View>

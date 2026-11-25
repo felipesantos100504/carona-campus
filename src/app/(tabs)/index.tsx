@@ -14,21 +14,24 @@ import { Chip } from '@/components/chip';
 import { EstadoCarregando, EstadoErro } from '@/components/estados';
 import { Selo } from '@/components/selo';
 import { Tela } from '@/components/tela';
+import { sugerirPontos } from '@/data/cidades';
 import { interpretarBusca } from '@/data/ia';
 import { buscarCaronas } from '@/data/repositorio';
 import { useCarregamento } from '@/hooks/use-carregamento';
 import { cores, espaco, sombra, tipografia } from '@/theme';
 import { formatarData, hojeISO } from '@/utils/formato';
 
-const SUGESTOES = ['Curitiba', 'Guarapuava', 'Ponta Grossa', 'Francisco Beltrão', 'Cascavel'];
+const SUGESTOES = ['Dois Vizinhos', 'Curitiba', 'Guarapuava', 'Francisco Beltrão', 'Cascavel'];
 
 export default function Buscar() {
   const [origem, setOrigem] = useState('');
   const [destino, setDestino] = useState('');
   const [data, setData] = useState('');
-  // Vindos da busca em texto livre: horário aproximado e ponto de embarque.
+  // Horário aproximado (vem da busca em texto livre) e lugares dentro da
+  // cidade onde o passageiro quer embarcar e descer (RF-17 e RF-20).
   const [horario, setHorario] = useState('');
   const [ponto, setPonto] = useState('');
+  const [chegada, setChegada] = useState('');
 
   const [pedido, setPedido] = useState('');
   const [interpretando, setInterpretando] = useState(false);
@@ -50,11 +53,21 @@ export default function Buscar() {
   function inverter() {
     setOrigem(destino);
     setDestino(origem);
+    setPonto(chegada);
+    setChegada(ponto);
+  }
+
+  // Lugares conhecidos nas cidades escolhidas: o toque preenche "Embarcar em" e depois "Descer em".
+  const pontosSugeridos = sugerirPontos([origem, destino]).filter((p) => p.nome !== ponto && p.nome !== chegada);
+
+  function escolherPonto(nome: string) {
+    if (!ponto.trim()) setPonto(nome);
+    else setChegada(nome);
   }
 
   function abrirResultados(params: { origem: string; destino: string; data: string; via?: string }) {
     // Passagem de parâmetros para a tela de resultados.
-    router.push({ pathname: '/resultados', params: { ...params, horario, ponto } });
+    router.push({ pathname: '/resultados', params: { ...params, horario, ponto: ponto.trim(), chegada: chegada.trim() } });
   }
 
   function buscar() {
@@ -76,11 +89,12 @@ export default function Buscar() {
       setData(b.data ?? '');
       setHorario(b.horario ?? '');
       setPonto(b.pontoEmbarque ?? '');
+      setChegada(b.pontoChegada ?? '');
       if (!b.origem && !b.destino) {
         setAvisoIA({
           tipo: 'info',
           texto:
-            'Não identificamos as cidades no seu pedido. Informe a cidade de saída e a de destino abaixo: por enquanto o app atende caronas entre cidades, não dentro da mesma cidade.',
+            'Não identificamos a cidade do seu pedido. Informe a cidade de saída e a de destino abaixo (para andar dentro da cidade, use a mesma nas duas).',
         });
         return;
       }
@@ -92,6 +106,7 @@ export default function Buscar() {
           data: b.data ?? '',
           horario: b.horario ?? '',
           ponto: b.pontoEmbarque ?? '',
+          chegada: b.pontoChegada ?? '',
           via: b.fonte,
         },
       });
@@ -111,7 +126,7 @@ export default function Buscar() {
       <Cabecalho titulo="Carona Campus" subtitulo="Buscar" />
       <View style={styles.intro}>
         <Text style={styles.titulo}>Para onde você quer ir?</Text>
-        <Text style={styles.subtitulo}>Encontre e compartilhe caronas entre cidades do Paraná.</Text>
+        <Text style={styles.subtitulo}>Encontre e compartilhe caronas entre cidades do Paraná ou dentro da sua cidade.</Text>
       </View>
 
       <Cartao estilo={styles.cartaoIA}>
@@ -119,7 +134,7 @@ export default function Buscar() {
         <Campo
           rotulo="Diga para onde você precisa ir"
           icone="chatbubble-ellipses-outline"
-          placeholder="Ex.: preciso ir pra Cascavel sexta à noite, saindo do Posto Fênix em Quedas do Iguaçu"
+          placeholder="Ex.: preciso ir do Mercado Ítalo até a UTFPR às 18h30"
           multiline
           value={pedido}
           onChangeText={setPedido}
@@ -160,6 +175,36 @@ export default function Buscar() {
 
         <View style={styles.bloco}>
           <View style={styles.linhaRotulo}>
+            <Ionicons name="flag-outline" size={16} color={cores.verde} />
+            <Text style={styles.rotulo}>Lugares dentro da cidade (opcional)</Text>
+          </View>
+          <Campo
+            rotulo="Embarcar em"
+            icone="flag-outline"
+            value={ponto}
+            onChangeText={setPonto}
+            placeholder="Ex.: Posto Fênix, o seu bairro"
+            maxLength={120}
+          />
+          <Campo
+            rotulo="Descer em"
+            icone="location-outline"
+            value={chegada}
+            onChangeText={setChegada}
+            placeholder="Ex.: UTFPR"
+            maxLength={120}
+          />
+          {pontosSugeridos.length > 0 ? (
+            <View style={styles.extras}>
+              {pontosSugeridos.map((p) => (
+                <Chip key={p.nome} rotulo={p.nome} icone="add-circle-outline" compacto onPress={() => escolherPonto(p.nome)} />
+              ))}
+            </View>
+          ) : null}
+        </View>
+
+        <View style={styles.bloco}>
+          <View style={styles.linhaRotulo}>
             <Ionicons name="calendar-outline" size={16} color={cores.verde} />
             <Text style={styles.rotulo}>Data da viagem</Text>
           </View>
@@ -172,14 +217,13 @@ export default function Buscar() {
           </View>
         </View>
 
-        {horario || ponto ? (
+        {horario ? (
           <View style={styles.extras}>
-            {horario ? <Chip rotulo={`Perto das ${horario}`} icone="close-circle" onPress={() => setHorario('')} /> : null}
-            {ponto ? <Chip rotulo={`Embarque: ${ponto}`} icone="close-circle" onPress={() => setPonto('')} /> : null}
+            <Chip rotulo={`Perto das ${horario}`} icone="close-circle" onPress={() => setHorario('')} />
           </View>
         ) : null}
 
-        <Aviso>Também mostramos viagens que passam pela sua cidade.</Aviso>
+        <Aviso>Também mostramos viagens que passam pela sua cidade ou pelos lugares informados.</Aviso>
         <Botao titulo="Buscar caronas" icone="search" onPress={buscar} />
       </Cartao>
 

@@ -14,9 +14,10 @@ import { Chip } from '@/components/chip';
 import { EstadoCarregando } from '@/components/estados';
 import { Selo } from '@/components/selo';
 import { Tela } from '@/components/tela';
-import { mesmaCidade } from '@/data/cidades';
+import { mesmaCidade, mesmoPonto, pontoConhecido, sugerirPontos } from '@/data/cidades';
 import { extrairViagem, revisarTexto, RevisaoTexto, ViagemExtraida } from '@/data/ia';
 import { publicarCarona } from '@/data/repositorio';
+import { Ponto } from '@/data/tipos';
 import { cores, espaco, raio, sombra, tipografia } from '@/theme';
 import { combinarDataHora, DIAS_CURTOS } from '@/utils/formato';
 
@@ -33,6 +34,10 @@ export default function Publicar() {
   const [destino, setDestino] = useState('');
   const [paradas, setParadas] = useState<string[]>([]);
   const [pontoEmbarque, setPontoEmbarque] = useState('');
+  // RF-20: lugares por onde passa dentro das cidades, na ordem (ex.: Mercado Ítalo → UTFPR).
+  const [pontos, setPontos] = useState<Ponto[]>([]);
+  const [novoPonto, setNovoPonto] = useState('');
+  const [cidadeNovoPonto, setCidadeNovoPonto] = useState('');
   const [novaParada, setNovaParada] = useState('');
   const [data, setData] = useState('');
   const [horario, setHorario] = useState('');
@@ -55,6 +60,9 @@ export default function Publicar() {
     setDestino(viagem.destino ?? '');
     setParadas(viagem.paradas);
     setPontoEmbarque(viagem.pontoEmbarque ?? '');
+    setPontos(viagem.pontos ?? []);
+    setNovoPonto('');
+    setCidadeNovoPonto('');
     setNovaParada('');
     setData(viagem.data ?? '');
     setHorario(viagem.horario ?? '');
@@ -101,12 +109,44 @@ export default function Publicar() {
     setNovaParada('');
   }
 
+  // Cidades do trajeto, sem repetir (na carona dentro da cidade, só uma).
+  const cidadesDaRota = [origem, ...paradas, destino]
+    .map((c) => c.trim())
+    .filter((c, i, todas) => c && todas.findIndex((x) => mesmaCidade(x, c)) === i);
+  const sugestoesDePonto = sugerirPontos(cidadesDaRota).filter(
+    (p) => !pontos.some((x) => mesmoPonto(x.nome, p.nome)) && !(pontoEmbarque && mesmoPonto(pontoEmbarque, p.nome)),
+  );
+
+  function adicionarPonto(nomeDigitado: string) {
+    const conhecido = pontoConhecido(nomeDigitado);
+    const nome = conhecido?.nome ?? nomeDigitado.trim();
+    if (!nome) return;
+    // Cidade do ponto: a do catálogo (se estiver no trajeto), a escolhida ou o destino.
+    const cidade =
+      cidadesDaRota.find((c) => conhecido && mesmaCidade(c, conhecido.cidade)) ||
+      cidadeNovoPonto ||
+      destino.trim() ||
+      origem.trim();
+    if (!cidade) {
+      setErro('Informe a origem e o destino antes dos pontos de passagem.');
+      return;
+    }
+    const repetido = pontos.some((p) => mesmoPonto(p.nome, nome)) || (!!pontoEmbarque && mesmoPonto(pontoEmbarque, nome));
+    if (!repetido) setPontos([...pontos, { nome, cidade }]);
+    setNovoPonto('');
+    setRevisao(null);
+  }
+
   function alternarDia(dia: number) {
     setDiasSemana((dias) => (dias.includes(dia) ? dias.filter((d) => d !== dia) : [...dias, dia]));
   }
 
   function validar() {
     if (!origem.trim() || !destino.trim()) return 'Informe a origem e o destino.';
+    // Dentro da mesma cidade, a carona só faz sentido com os lugares de saída e de chegada.
+    if (paradas.length === 0 && mesmaCidade(origem, destino) && (pontoEmbarque.trim() ? 1 : 0) + pontos.length < 2) {
+      return 'Carona dentro da mesma cidade: informe o ponto de embarque e pelo menos um ponto de passagem (ex.: Posto Fênix → UTFPR).';
+    }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return 'Informe a data no formato AAAA-MM-DD.';
     if (!/^\d{1,2}:\d{2}$/.test(horario)) return 'Informe o horário no formato HH:MM.';
     if (vagas < 1) return 'Informe quantas vagas você oferece.';
@@ -124,7 +164,8 @@ export default function Publicar() {
     // visíveis para todos. Só avisa; a pessoa decide se corrige ou publica.
     if (!revisao) {
       setRevisando(true);
-      const resultado = await revisarTexto([pontoEmbarque, observacoes].filter((t) => t.trim()).join('\n'));
+      const textosPublicos = [pontoEmbarque, ...pontos.map((p) => p.nome), observacoes];
+      const resultado = await revisarTexto(textosPublicos.filter((t) => t.trim()).join('\n'));
       setRevisando(false);
       if (resultado.problemas.length > 0) {
         setRevisao(resultado);
@@ -139,6 +180,7 @@ export default function Publicar() {
         destino: destino.trim(),
         paradas,
         pontoEmbarque: pontoEmbarque.trim() || undefined,
+        pontos,
         dataHora: combinarDataHora(data, horario),
         vagasTotais: vagas,
         valorPorVaga: Number(valor.replace(',', '.')),
@@ -213,7 +255,16 @@ export default function Publicar() {
 
       {mostrarCampos ? (
         <>
-          <Cartao titulo="Estrutura da rota" icone="git-branch-outline" extra={<Selo rotulo="Intermunicipal" />}>
+          <Cartao
+            titulo="Estrutura da rota"
+            icone="git-branch-outline"
+            extra={
+              <Selo
+                rotulo={
+                  origem.trim() && paradas.length === 0 && mesmaCidade(origem, destino) ? 'Dentro da cidade' : 'Entre cidades'
+                }
+              />
+            }>
             <CampoCidade rotulo="Origem da viagem" tipo="origem" valor={origem} onChange={setOrigem} placeholder="Ex.: Pato Branco" />
             <Campo
               rotulo="Ponto de embarque (opcional)"
@@ -249,6 +300,67 @@ export default function Publicar() {
                 pequeno
                 desabilitado={!novaParada.trim()}
                 onPress={adicionarParada}
+                estilo={styles.inicio}
+              />
+            </View>
+
+            {/* RF-20: lugares dentro das cidades, para a busca por ponto (ex.: até a UTFPR). */}
+            <View style={styles.bloco}>
+              <Text style={styles.rotulo}>Pontos de passagem (opcional)</Text>
+              <Text style={styles.legenda}>
+                Lugares onde o passageiro pode embarcar ou descer, na ordem do caminho. Para uma carona dentro da
+                cidade, use a mesma cidade na origem e no destino.
+              </Text>
+              {pontos.length > 0 ? (
+                <View style={styles.chips}>
+                  {pontos.map((p, i) => (
+                    <Chip
+                      key={`${p.nome}-${p.cidade}`}
+                      rotulo={`${i + 1}. ${p.nome}${cidadesDaRota.length > 1 ? ` · ${p.cidade}` : ''}`}
+                      icone="close-circle"
+                      onPress={() => {
+                        setPontos(pontos.filter((x) => x !== p));
+                        setRevisao(null);
+                      }}
+                    />
+                  ))}
+                </View>
+              ) : null}
+              {sugestoesDePonto.length > 0 ? (
+                <View style={styles.chips}>
+                  {sugestoesDePonto.map((p) => (
+                    <Chip key={p.nome} rotulo={p.nome} icone="add-circle-outline" compacto onPress={() => adicionarPonto(p.nome)} />
+                  ))}
+                </View>
+              ) : null}
+              <Campo
+                rotulo="Adicionar ponto"
+                icone="location-outline"
+                value={novoPonto}
+                onChangeText={setNovoPonto}
+                placeholder="Ex.: Mercado Ítalo, UTFPR, bairro"
+                maxLength={120}
+              />
+              {cidadesDaRota.length > 1 ? (
+                <View style={styles.chips}>
+                  {cidadesDaRota.map((c) => (
+                    <Chip
+                      key={c}
+                      rotulo={c}
+                      compacto
+                      selecionado={mesmaCidade(cidadeNovoPonto || destino, c)}
+                      onPress={() => setCidadeNovoPonto(c)}
+                    />
+                  ))}
+                </View>
+              ) : null}
+              <Botao
+                titulo="Adicionar ponto"
+                icone="add-circle-outline"
+                variante="suave"
+                pequeno
+                desabilitado={!novoPonto.trim()}
+                onPress={() => adicionarPonto(novoPonto)}
                 estilo={styles.inicio}
               />
             </View>

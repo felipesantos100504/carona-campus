@@ -21,6 +21,7 @@ import {
   responderSolicitacao,
   solicitarVaga,
 } from '@/data/repositorio';
+import { dentroDaCidade, roteiro } from '@/data/roteiro';
 import { Reserva, Solicitacao } from '@/data/tipos';
 import { useCarregamento } from '@/hooks/use-carregamento';
 import { cores, espaco, tipografia } from '@/theme';
@@ -75,7 +76,7 @@ export default function DetalhesCarona() {
   }
 
   const { carona, motorista, reserva, solicitacoes, minha: minhaCarona } = detalhe.dados;
-  const trajeto = [carona.origem, ...carona.paradas, carona.destino];
+  const itinerario = linhasDoItinerario(carona);
   const lotada = carona.vagasDisponiveis <= 0;
   const viagemPassada = jaPassou(carona.dataHora);
 
@@ -132,11 +133,6 @@ export default function DetalhesCarona() {
     );
   }
 
-  function legendaParada(i: number) {
-    if (i === 0) return carona.pontoEmbarque ? `Embarque: ${carona.pontoEmbarque}` : 'Ponto de partida';
-    if (i === trajeto.length - 1) return 'Destino final';
-    return 'Parada intermediária';
-  }
 
   return (
     <Tela bordas={['bottom']} rodape={rodapePassageiro()}>
@@ -171,18 +167,17 @@ export default function DetalhesCarona() {
 
       <Cartao titulo="Itinerário planejado" icone="map-outline">
         <View>
-          {trajeto.map((cidade, i) => {
-            const ponta = i === 0 || i === trajeto.length - 1;
-            const ultima = i === trajeto.length - 1;
+          {itinerario.map((linha, i) => {
+            const ultima = i === itinerario.length - 1;
             return (
-              <View key={`${cidade}-${i}`} style={styles.parada}>
+              <View key={`${linha.titulo}-${i}`} style={styles.parada}>
                 <View style={styles.marcadorColuna}>
-                  <View style={ponta ? styles.marcadorPonta : styles.marcadorParada} />
+                  <View style={linha.ponta ? styles.marcadorPonta : styles.marcadorParada} />
                   {ultima ? null : <View style={styles.linhaTrajeto} />}
                 </View>
                 <View style={styles.textosParada}>
-                  <Text style={ponta ? styles.cidadePonta : styles.cidadeParada}>{cidade}</Text>
-                  <Text style={styles.legenda}>{legendaParada(i)}</Text>
+                  <Text style={linha.ponta ? styles.cidadePonta : styles.cidadeParada}>{linha.titulo}</Text>
+                  <Text style={styles.legenda}>{linha.legenda}</Text>
                 </View>
                 {i === 0 ? <Text style={styles.horario}>{formatarHora(carona.dataHora)}</Text> : null}
               </View>
@@ -238,6 +233,47 @@ export default function DetalhesCarona() {
       ) : null}
     </Tela>
   );
+}
+
+type LinhaItinerario = { titulo: string; legenda: string; ponta: boolean };
+
+/**
+ * Linhas do "Itinerário planejado" (RF-18 e RF-20). Entre cidades: cada cidade
+ * e, abaixo dela, os pontos de passagem. Dentro da cidade: só os lugares, do
+ * embarque até o último ponto.
+ */
+function linhasDoItinerario(carona: Parameters<typeof roteiro>[0]): LinhaItinerario[] {
+  const trechos = roteiro(carona);
+  if (dentroDaCidade(carona)) {
+    const lugares = trechos.flatMap((t) => t.pontos.map((p) => ({ ...p, cidade: t.cidade })));
+    if (lugares.length >= 2) {
+      return lugares.map((p, i) => ({
+        titulo: p.nome,
+        legenda: `${p.cidade} · ${i === 0 ? 'Embarque' : i === lugares.length - 1 ? 'Destino final' : 'Ponto de passagem'}`,
+        ponta: i === 0 || i === lugares.length - 1,
+      }));
+    }
+  }
+  return trechos.flatMap((t, i) => {
+    const primeira = i === 0;
+    const ultima = i === trechos.length - 1;
+    const embarque = t.pontos.find((p) => p.embarque);
+    const cidade: LinhaItinerario = {
+      titulo: t.cidade,
+      legenda: primeira
+        ? embarque
+          ? `Embarque: ${embarque.nome}`
+          : 'Ponto de partida'
+        : ultima
+          ? 'Destino final'
+          : 'Parada intermediária',
+      ponta: primeira || ultima,
+    };
+    const pontos = t.pontos
+      .filter((p) => !p.embarque)
+      .map((p) => ({ titulo: p.nome, legenda: `Ponto de passagem em ${t.cidade}`, ponta: false }));
+    return [cidade, ...pontos];
+  });
 }
 
 function AvisoReserva({ reserva }: { reserva: Reserva }) {
