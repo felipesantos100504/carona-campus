@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Aviso } from '@/components/aviso';
+import { AvisoRevisao } from '@/components/aviso-revisao';
 import { Botao } from '@/components/botao';
 import { Cabecalho } from '@/components/cabecalho';
 import { Campo } from '@/components/campo';
@@ -14,7 +15,7 @@ import { EstadoCarregando } from '@/components/estados';
 import { Selo } from '@/components/selo';
 import { Tela } from '@/components/tela';
 import { mesmaCidade } from '@/data/cidades';
-import { extrairViagem, ViagemExtraida } from '@/data/ia';
+import { extrairViagem, revisarTexto, RevisaoTexto, ViagemExtraida } from '@/data/ia';
 import { publicarCarona } from '@/data/repositorio';
 import { cores, espaco, raio, sombra, tipografia } from '@/theme';
 import { combinarDataHora, DIAS_CURTOS } from '@/utils/formato';
@@ -39,9 +40,14 @@ export default function Publicar() {
   const [valor, setValor] = useState('');
   const [recorrente, setRecorrente] = useState(false);
   const [diasSemana, setDiasSemana] = useState<number[]>([]);
+  const [observacoes, setObservacoes] = useState('');
 
   const [publicando, setPublicando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Revisão dos textos públicos pela IA (RF-19). Com avisos na tela, o próximo
+  // toque em Publicar publica sem revisar de novo.
+  const [revisando, setRevisando] = useState(false);
+  const [revisao, setRevisao] = useState<RevisaoTexto | null>(null);
 
   function preencher(viagem: Partial<ViagemExtraida> & { paradas: string[] }) {
     setFonte(viagem.fonte ?? null);
@@ -56,6 +62,19 @@ export default function Publicar() {
     setValor(viagem.valorPorVaga != null ? String(viagem.valorPorVaga) : '');
     setRecorrente(!!viagem.diasSemana);
     setDiasSemana(viagem.diasSemana ?? []);
+    setObservacoes(viagem.observacoes ?? '');
+    setRevisao(null);
+  }
+
+  // Mudou um texto público: a revisão anterior deixa de valer.
+  function editarPonto(valor: string) {
+    setPontoEmbarque(valor);
+    setRevisao(null);
+  }
+
+  function editarObservacoes(valor: string) {
+    setObservacoes(valor);
+    setRevisao(null);
   }
 
   async function interpretar() {
@@ -100,6 +119,19 @@ export default function Publicar() {
     const problema = validar();
     setErro(problema);
     if (problema) return;
+
+    // RF-19: a IA confere o ponto de embarque e as observações, que ficam
+    // visíveis para todos. Só avisa; a pessoa decide se corrige ou publica.
+    if (!revisao) {
+      setRevisando(true);
+      const resultado = await revisarTexto([pontoEmbarque, observacoes].filter((t) => t.trim()).join('\n'));
+      setRevisando(false);
+      if (resultado.problemas.length > 0) {
+        setRevisao(resultado);
+        return;
+      }
+    }
+
     setPublicando(true);
     try {
       const carona = await publicarCarona({
@@ -111,11 +143,13 @@ export default function Publicar() {
         vagasTotais: vagas,
         valorPorVaga: Number(valor.replace(',', '.')),
         recorrencia: recorrente ? { diasSemana } : undefined,
+        observacoes: observacoes.trim() || undefined,
         textoOriginal: texto.trim(),
       });
       setTexto('');
       setMostrarCampos(false);
       setErroIA(null);
+      setRevisao(null);
       router.push({ pathname: '/carona/[id]', params: { id: carona.id } });
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Erro inesperado.');
@@ -126,10 +160,10 @@ export default function Publicar() {
 
   const rodape = mostrarCampos ? (
     <Botao
-      titulo="Publicar carona"
+      titulo={revisao ? 'Publicar mesmo assim' : 'Publicar carona'}
       icone="checkmark-circle-outline"
       variante="verde"
-      carregando={publicando}
+      carregando={publicando || revisando}
       onPress={publicar}
     />
   ) : null;
@@ -185,7 +219,7 @@ export default function Publicar() {
               rotulo="Ponto de embarque (opcional)"
               icone="flag-outline"
               value={pontoEmbarque}
-              onChangeText={setPontoEmbarque}
+              onChangeText={editarPonto}
               placeholder="Ex.: Posto Fênix, rodoviária"
               maxLength={120}
             />
@@ -283,9 +317,22 @@ export default function Publicar() {
 
             <Aviso>O valor é apenas informativo, para dividir as despesas. O acerto é feito diretamente com os passageiros.</Aviso>
           </Cartao>
+
+          <Cartao titulo="Observações" icone="document-text-outline">
+            <Campo
+              rotulo="Para o passageiro (opcional)"
+              icone="chatbubble-ellipses-outline"
+              value={observacoes}
+              onChangeText={editarObservacoes}
+              placeholder="Ex.: uma mala média por pessoa, saio pontualmente"
+              multiline
+              maxLength={500}
+            />
+          </Cartao>
         </>
       ) : null}
 
+      {revisao ? <AvisoRevisao revisao={revisao} acao="Publicar mesmo assim" /> : null}
       {erro ? <Aviso tipo="erro">{erro}</Aviso> : null}
     </Tela>
   );

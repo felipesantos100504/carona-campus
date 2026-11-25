@@ -36,7 +36,7 @@ export const app = initializeApp(firebaseConfig);
 // pelo cache próprio do repositório (AsyncStorage).
 export const db = initializeFirestore(app, {
   ignoreUndefinedProperties: true,
-  localCache: web ? persistentLocalCache() : memoryLocalCache(),
+  localCache: web ? persistentLocalCache() : memoryLocalCache(), // No navegador, o cache fica salvo; no celular, fica em memória.
 });
 
 type ComPersistenciaRN = {

@@ -302,6 +302,12 @@ Difícil de mudar depois: trocar de provedor de IA exige reescrever `src/data/ia
 
 A mesma integração passou a interpretar o pedido do passageiro (RF-17), com outro formato de resposta (origem, destino, data, horário e ponto de embarque) e o mesmo plano B por regras. A IA só preenche os campos: a compatibilidade continua sendo feita por regras programadas (RNF-06), agora com uma janela de 1h30 em volta do horário pedido. Lugares dentro da cidade nunca viram origem ou destino; viram ponto de embarque (RF-18), porque a busca compara cidades.
 
+### Revisão (2026-11-24): revisão dos textos públicos
+
+A IA passou a revisar também os textos que ficam visíveis para todos os usuários: as observações da carona (campo novo na publicação, também preenchido pela IA a partir do texto livre) e o "Sobre você" do perfil (RF-19). Ao tocar em Publicar ou Salvar, o app envia só esse texto ao Gemini, com saída estruturada (`problemas`: lista de avisos curtos), e mostra os avisos sem bloquear: a pessoa corrige ou toca em "Publicar mesmo assim" / "Salvar mesmo assim".
+
+A revisão só avisa porque a IA pode errar nos dois sentidos, e quem escreveu é quem decide. O tempo limite é de 8 segundos, menor que o da extração, porque a pessoa está esperando para publicar. Se a IA falhar, `revisarTextoLocal` (em `extracao-local.ts`) aponta telefone, e-mail, CPF, chave Pix e links por expressões regulares; a linguagem ofensiva fica só com a IA, porque uma lista de palavras teria muitos falsos positivos e negativos. As regras do Firestore não mudam: `observacoes` e `bio` já eram campos opcionais de até 500 caracteres.
+
 ### Revisão (2026-11-19): chamada direta à Gemini API com chave do AI Studio
 
 O Firebase AI Logic foi ativado no console (Firebase AI Logic API e Gemini API ativas), mas a configuração do provedor não foi criada: toda chamada respondia "Firebase AI Logic genai config not found", mesmo quatro dias depois, e o console não oferece como recriá-la. O App Check foi descartado como causa (a exigência para o AI Logic só começa em 21/01/2027).

@@ -145,3 +145,37 @@ function paraISO(d: Date) {
 function formatarHora(h: number, m: number) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
+
+// ---------- revisão de texto público (plano B da revisão com IA) ----------
+
+const PADROES_SENSIVEIS: { padrao: RegExp; aviso: string }[] = [
+  {
+    padrao: /(?:\+?55\s?)?(?:\(?\d{2}\)?[\s-]?)?9?\s?\d{4}[-.\s]?\d{4}\b/,
+    aviso: 'O texto tem um número de telefone, que ficaria visível para todos os usuários. Combine o contato depois que a vaga for confirmada.',
+  },
+  {
+    padrao: /[\w.+-]+@[\w-]+\.[\w.]+/,
+    aviso: 'O texto tem um e-mail, que ficaria visível para todos os usuários.',
+  },
+  {
+    padrao: /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/,
+    aviso: 'O texto parece ter um CPF. Não publique documentos pessoais.',
+  },
+  {
+    padrao: /chave\s+(do\s+)?pix/i,
+    aviso: 'Evite publicar sua chave Pix: o pagamento é combinado diretamente com quem tiver a vaga confirmada.',
+  },
+  {
+    padrao: /(^|\s)@[\w.]{3,}|https?:\/\/|www\./i,
+    aviso: 'O texto tem um perfil de rede social ou um link, que ficaria visível para todos os usuários.',
+  },
+];
+
+/**
+ * Confere por padrões se um texto que vai ficar público (observações da
+ * carona, bio do perfil) tem dados de contato ou documentos. Não reconhece
+ * linguagem ofensiva: isso fica só com a IA.
+ */
+export function revisarTextoLocal(texto: string): string[] {
+  return PADROES_SENSIVEIS.filter(({ padrao }) => padrao.test(texto)).map(({ aviso }) => aviso);
+}

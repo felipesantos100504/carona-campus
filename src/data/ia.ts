@@ -1,13 +1,15 @@
 import { getAI, getGenerativeModel, GoogleAIBackend } from 'firebase/ai';
 
 import { APELIDOS, CIDADES, normalizar } from './cidades';
-import { extrairViagemLocal } from './extracao-local';
+import { extrairViagemLocal, revisarTextoLocal } from './extracao-local';
 import { app } from './firebase';
 
-// Funcionalidade de IA (PRD, seção 6): o Gemini transforma texto livre em
-// dados estruturados em dois pontos do app:
+// Funcionalidade de IA (PRD, seção 6): o Gemini trabalha com texto livre em
+// três pontos do app:
 // - publicação: o motorista descreve a viagem e a IA preenche os campos;
-// - busca: o passageiro diz para onde quer ir e a IA preenche a busca.
+// - busca: o passageiro diz para onde quer ir e a IA preenche a busca;
+// - revisão: antes de publicar observações ou a bio, a IA aponta dados de
+//   contato, documentos e linguagem ofensiva (RF-19).
 // Só o texto digitado é enviado ao modelo.
 //
 // Duas formas de chamar o Gemini (ADR-0007):
@@ -33,7 +35,16 @@ export type ViagemExtraida = {
   valorPorVaga?: number;
   /** 0 = domingo ... 6 = sábado. Só vem preenchido em viagens recorrentes. */
   diasSemana?: number[];
+  /** Outras informações para o passageiro (bagagem, regras do carro...). */
+  observacoes?: string;
   /** De onde vieram os dados: do Gemini ou da extração por regras (plano B). */
+  fonte: 'ia' | 'regras';
+};
+
+/** Resultado da revisão de um texto que vai ficar público. */
+export type RevisaoTexto = {
+  /** Avisos para a pessoa, em frases curtas. Vazio quando está tudo certo. */
+  problemas: string[];
   fonte: 'ia' | 'regras';
 };
 
@@ -60,6 +71,9 @@ export class ErroExtracao extends Error {
 const MODELO = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3.5-flash-lite';
 const CHAVE_GEMINI = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 const TEMPO_LIMITE_MS = 15000;
+// A revisão acontece ao tocar em Publicar/Salvar: espera menos e, se a IA
+// não responder, segue com a conferência por regras.
+const TEMPO_LIMITE_REVISAO_MS = 8000;
 const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
 // ---------- formatos de resposta (structured output) ----------
@@ -89,11 +103,26 @@ const ESQUEMA_PUBLICACAO: Esquema = {
       items: { type: 'INTEGER' },
       description: 'Dias da semana em que a viagem se repete (0=domingo...6=sábado). Vazio se não for recorrente.',
     },
+    observacoes: texto(
+      'Outras informações para o passageiro que o texto cita (bagagem, regras do carro, pontualidade), como escritas. Não repita rota, data, horário, vagas nem valor.',
+    ),
   },
   required: ['paradas'],
 };
 
 const ESQUEMA_BUSCA: Esquema = { type: 'OBJECT', properties: CAMPOS_COMUNS };
+
+const ESQUEMA_REVISAO: Esquema = {
+  type: 'OBJECT',
+  properties: {
+    problemas: {
+      type: 'ARRAY',
+      items: { type: 'STRING' },
+      description: 'Um aviso curto para cada problema encontrado. Lista vazia se o texto estiver adequado.',
+    },
+  },
+  required: ['problemas'],
+};
 
 /** O SDK do Firebase AI Logic usa os mesmos esquemas, com os tipos em minúsculas. */
 function paraAiLogic(e: Esquema): Esquema {
@@ -140,6 +169,20 @@ function instrucoesBusca(textoLivre: string) {
   ].join('\n');
 }
 
+function instrucoesRevisao(textoLivre: string) {
+  return [
+    'Você revisa textos que ficarão visíveis para todos os usuários de um app de caronas entre cidades (observações de uma carona ou a apresentação do perfil).',
+    'Aponte somente estes problemas:',
+    '- dados de contato: telefone, e-mail, perfil de rede social ou link;',
+    '- dados pessoais sensíveis: CPF, RG, chave Pix, endereço residencial completo;',
+    '- linguagem ofensiva, discriminatória ou preconceituosa.',
+    'Informações normais de viagem (bagagem, horário, regras do carro, ponto de encontro em lugar público) estão adequadas.',
+    'Escreva cada aviso em português, em uma frase curta dirigida à pessoa, dizendo o que mudar. Se o texto estiver adequado, devolva a lista vazia.',
+    '',
+    `Texto: """${textoLivre}"""`,
+  ].join('\n');
+}
+
 // ---------- validação ----------
 
 /** Usa a grafia do catálogo quando a cidade é conhecida ("São Jorge" → "São Jorge d'Oeste"). */
@@ -179,6 +222,7 @@ function validarPublicacao(bruto: unknown): Omit<ViagemExtraida, 'fonte'> | null
     vagas,
     valorPorVaga: valor,
     diasSemana: dias.length ? dias.sort() : undefined,
+    observacoes: textoValido(r.observacoes, 500),
   };
   return resultado.origem || resultado.destino ? resultado : null;
 }
@@ -189,14 +233,25 @@ function validarBusca(bruto: unknown): Omit<BuscaExtraida, 'fonte'> | null {
   return Object.values(resultado).some(Boolean) ? resultado : null;
 }
 
+/** No máximo 3 avisos, cada um com até 200 caracteres. */
+function validarRevisao(bruto: unknown): string[] | null {
+  if (!bruto || typeof bruto !== 'object') return null;
+  const problemas = (bruto as Record<string, unknown>).problemas;
+  if (!Array.isArray(problemas)) return null;
+  return problemas
+    .map((p) => textoValido(p, 200))
+    .filter((p): p is string => !!p)
+    .slice(0, 3);
+}
+
 // ---------- chamada ao Gemini ----------
 
 const ai = getAI(app, { backend: new GoogleAIBackend() });
 
-async function perguntarAoGemini(prompt: string, esquema: Esquema): Promise<unknown> {
+async function perguntarAoGemini(prompt: string, esquema: Esquema, tempoLimite = TEMPO_LIMITE_MS): Promise<unknown> {
   let temporizador: ReturnType<typeof setTimeout> | undefined;
   const limite = new Promise<never>((_, rejeitar) => {
-    temporizador = setTimeout(() => rejeitar(new Error('A IA demorou demais para responder.')), TEMPO_LIMITE_MS);
+    temporizador = setTimeout(() => rejeitar(new Error('A IA demorou demais para responder.')), tempoLimite);
   });
   try {
     const chamada = CHAVE_GEMINI ? viaGeminiApi(prompt, esquema, CHAVE_GEMINI) : viaAiLogic(prompt, esquema);
@@ -273,4 +328,24 @@ export async function interpretarBusca(textoLivre: string): Promise<BuscaExtraid
     return { origem, destino, pontoEmbarque, data, horario, fonte: 'regras' };
   }
   throw new ErroExtracao('Não entendemos o pedido. Preencha as cidades nos campos da busca.');
+}
+
+/**
+ * Revisão (motorista e perfil): confere um texto que vai ficar público antes
+ * de gravar. Nunca lança erro: se a IA falhar, usa a conferência por regras,
+ * que pega telefone, e-mail, CPF, chave Pix e links (RF-19).
+ */
+export async function revisarTexto(textoLivre: string): Promise<RevisaoTexto> {
+  if (!textoLivre.trim()) return { problemas: [], fonte: 'regras' };
+
+  try {
+    const problemas = validarRevisao(
+      await perguntarAoGemini(instrucoesRevisao(textoLivre), ESQUEMA_REVISAO, TEMPO_LIMITE_REVISAO_MS),
+    );
+    if (problemas) return { problemas, fonte: 'ia' };
+  } catch (e) {
+    console.warn('[IA] Gemini indisponível, revisando o texto por regras:', e);
+  }
+
+  return { problemas: revisarTextoLocal(textoLivre), fonte: 'regras' };
 }

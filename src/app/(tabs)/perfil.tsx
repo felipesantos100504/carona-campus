@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Aviso } from '@/components/aviso';
+import { AvisoRevisao } from '@/components/aviso-revisao';
 import { Botao } from '@/components/botao';
 import { Cabecalho } from '@/components/cabecalho';
 import { Campo } from '@/components/campo';
@@ -13,6 +14,7 @@ import { EstadoCarregando, EstadoErro } from '@/components/estados';
 import { Selo } from '@/components/selo';
 import { Tela } from '@/components/tela';
 import { sair as sairDaConta } from '@/data/auth';
+import { revisarTexto, RevisaoTexto } from '@/data/ia';
 import { definirSimularErro, obterConfig, obterMeuPerfil, salvarMeuPerfil } from '@/data/repositorio';
 import { Usuario } from '@/data/tipos';
 import { useCarregamento } from '@/hooks/use-carregamento';
@@ -30,6 +32,9 @@ export default function Perfil() {
   const [bio, setBio] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Revisão da bio pela IA (RF-19). Com avisos na tela, o próximo toque em
+  // Salvar grava sem revisar de novo.
+  const [revisao, setRevisao] = useState<RevisaoTexto | null>(null);
   const [trocandoFoto, setTrocandoFoto] = useState(false);
   const [erroFoto, setErroFoto] = useState<string | null>(null);
 
@@ -69,7 +74,13 @@ export default function Perfil() {
     setCidade(usuario.cidade);
     setBio(usuario.bio ?? '');
     setErro(null);
+    setRevisao(null);
     setEditando(true);
+  }
+
+  function editarBio(valor: string) {
+    setBio(valor);
+    setRevisao(null);
   }
 
   async function salvar() {
@@ -80,8 +91,17 @@ export default function Perfil() {
     setSalvando(true);
     setErro(null);
     try {
+      // RF-19: a bio fica visível para todos; a IA confere antes de salvar.
+      if (!revisao) {
+        const resultado = await revisarTexto(bio);
+        if (resultado.problemas.length > 0) {
+          setRevisao(resultado);
+          return;
+        }
+      }
       await salvarMeuPerfil({ nome: nome.trim(), cidade: cidade.trim(), bio: bio.trim() || undefined });
       setEditando(false);
+      setRevisao(null);
       await perfil.recarregar();
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Erro inesperado.');
@@ -155,12 +175,20 @@ export default function Perfil() {
             rotulo="Sobre você"
             icone="chatbubble-ellipses-outline"
             value={bio}
-            onChangeText={setBio}
+            onChangeText={editarBio}
             placeholder="Ex.: viajo toda sexta para visitar a família"
             multiline
+            maxLength={500}
           />
+          {revisao ? <AvisoRevisao revisao={revisao} acao="Salvar mesmo assim" /> : null}
           {erro ? <Aviso tipo="erro">{erro}</Aviso> : null}
-          <Botao titulo="Salvar" icone="checkmark" variante="verde" carregando={salvando} onPress={salvar} />
+          <Botao
+            titulo={revisao ? 'Salvar mesmo assim' : 'Salvar'}
+            icone="checkmark"
+            variante="verde"
+            carregando={salvando}
+            onPress={salvar}
+          />
           <Botao titulo="Cancelar" variante="texto" desabilitado={salvando} onPress={() => setEditando(false)} />
         </Cartao>
       ) : usuario ? (

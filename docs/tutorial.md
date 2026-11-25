@@ -47,8 +47,9 @@ O valor por vaga é apenas informativo: o pagamento é combinado diretamente com
 1. Na aba **Publicar**, escreva a viagem como numa mensagem de WhatsApp. Exemplo:
    > saio de Pato Branco toda sexta às 18h pra Curitiba, passo por Guarapuava e Ponta Grossa, 3 vagas, R$ 90
 2. Toque em **Interpretar com IA**. O Gemini organiza origem, destino, paradas, data, horário, vagas, valor e os dias da semana (se a viagem se repete).
-3. Confira os campos e corrija o que precisar. Dá para remover ou adicionar paradas, informar o **ponto de embarque** (ex.: "Posto Fênix", "rodoviária") e ligar **Repetir toda semana**.
-4. Toque em **Publicar carona**. O app abre os detalhes da carona publicada.
+3. Confira os campos e corrija o que precisar. Dá para remover ou adicionar paradas, informar o **ponto de embarque** (ex.: "Posto Fênix", "rodoviária"), ligar **Repetir toda semana** e escrever **Observações** para o passageiro (ex.: "uma mala média por pessoa").
+4. Toque em **Publicar carona**. Antes de publicar, a IA confere o ponto de embarque e as observações, que ficam visíveis para todos. Se o texto tiver telefone, e-mail, documento, chave Pix, link ou linguagem ofensiva, o app avisa: corrija o texto ou toque em **Publicar mesmo assim**. O mesmo vale para o "Sobre você" no **Perfil**.
+5. O app abre os detalhes da carona publicada.
 
 Se a IA estiver fora do ar ou responder fora do formato esperado, o app avisa e preenche o que conseguir reconhecer por regras. Se nada for reconhecido, todos os campos ficam liberados para preenchimento manual. A publicação nunca é bloqueada.
 
